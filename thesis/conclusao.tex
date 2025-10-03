@@ -1,0 +1,31 @@
+\chapter{Conclusão}
+O mercado de jogos vem crescendo cada vez mais e cada vez mais pessoas estão interessadas em participar
+dessa nova tendência. O uso de inteligência artificial (IA) no desenvolvimento de jogos digitais tem se 
+consolidado como uma ferramenta poderosa para automatizar tarefas complexas, ampliar possibilidades criativas 
+e reduzir o custo de produção. Dentre as diversas aplicações possíveis, a geração procedural de conteúdo (PCG) é uma
+técnica clássica já bastante implementada, porém vem se reintegrando e modificando-se para adaptar-se aos novos
+poderosos algoritmos de IA. A enorme presença de diferentes algoritmos cria um ecossistema de inovação constante,
+cada algoritmo com suas vantagens em desvantagens. O aprendizado por reforço representa uma abordagem promissora, 
+principalmente por sua capacidade de operar sem dados de treinamento previamente disponíveis, uma limitação comum em jogos
+ainda em fase de desenvolvimento. Essa característica torna os métodos baseados em RL particularmente adequados 
+para auxiliar diretamente o processo criativo no design de jogos, contribuindo para a geração dinâmica 
+e adaptativa de níveis, mapas e outros elementos.
+
+Neste trabalho, foram exploradas diferentes estruturas de modelagem do problema de PCG utilizando RL, investigando o 
+impacto de múltiplos fatores: recompensas personalizadas, variações no espaço de estados e ações, cenários com diferentes 
+configurações de labirintos e alterações na taxa de atualização do ambiente. As experiências demonstraram que, 
+ainda que os algoritmos, em especial o \textit{Proximal Policy Optimization} (PPO), não tenham atingido uma política ótima, 
+foi possível observar a capacidade dos modelos em gerar conteúdos válidos e coerentes. 
+Isso indica que, mesmo sem convergir completamente, os agentes aprendem a evitar soluções inviáveis e a respeitar certas 
+restrições estruturais implícitas no ambiente.
+
+A análise dos resultados revelou também alguns dos principais desafios enfrentados ao aplicar RL no contexto de PCG, 
+como o alto custo computacional, a sensibilidade à definição das recompensas e a complexidade de se trabalhar com espaços de ação e 
+observação de alta dimensionalidade. Tais dificuldades reforçam a necessidade de estratégias que mitiguem esses 
+fatores, como a decomposição hierárquica do problema, o uso de representações compactas e a 
+integração de técnicas como \textit{multi-task learning} ou métodos híbridos que combinem RL com dados supervisionados.
+
+Portanto, este estudo contribui não apenas com uma análise prática da aplicabilidade do RL em tarefas de geração procedural, 
+como também com reflexões relevantes para futuras pesquisas na área. O aprofundamento dessas investigações poderá, 
+futuramente, viabilizar a criação de ferramentas mais acessíveis e eficientes para o uso de IA no desenvolvimento de 
+jogos digitais.

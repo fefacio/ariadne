@@ -1,0 +1,5 @@
+{
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "cSpell.enabled": false,
+    "java.compile.nullAnalysis.mode": "disabled"
+}

@@ -1,0 +1,39 @@
+\providecommand{\abntreprintinfo}[1]{%
+ \citeonline{#1}}
+\setlength{\labelsep}{0pt}\begin{thebibliography}{}
+\providecommand{\abntrefinfo}[3]{}
+\providecommand{\abntbstabout}[1]{}
+\abntbstabout{v-1.9.7 }
+
+\bibitem[Choma, Chwaleba e Dzieńkowski 2023]{springboot-why}
+\abntrefinfo{Choma, Chwaleba e Dzieńkowski}{CHOMA; CHWALEBA;
+  DZIEńKOWSKI}{2023}
+{CHOMA, D.; CHWALEBA, K.; DZIEńKOWSKI, M. The efficiency and reliability of
+  backend technologies: Express, django, and spring boot.
+\emph{Informatyka, Automatyka, Pomiary w Gospodarce i Ochronie Środowiska},
+  v.~13, p. 73--78, 12 2023.}
+
+\bibitem[Farahani, SteadieSeifi e Asgari 2010]{flp_mcdp_survey}
+\abntrefinfo{Farahani, SteadieSeifi e Asgari}{FARAHANI; STEADIESEIFI;
+  ASGARI}{2010}
+{FARAHANI, R.~Z.; STEADIESEIFI, M.; ASGARI, N. Multiple criteria facility
+  location problems: A survey.
+\emph{Applied Mathematical Modelling}, v.~34, n.~7, p. 1689--1709, 2010.
+ISSN 0307-904X.
+Dispon{\'\i}vel em:
+  \url{https://www.sciencedirect.com/science/article/pii/S0307904X09003242}.}
+
+\bibitem[Majeed e Rauf 2020]{graph_applications2020}
+\abntrefinfo{Majeed e Rauf}{MAJEED; RAUF}{2020}
+{MAJEED, A.; RAUF, I. Graph theory: A comprehensive survey about graph theory
+  applications in computer science and social networks.
+\emph{Inventions}, v.~5, n.~1, 2020.
+ISSN 2411-5134.
+Dispon{\'\i}vel em: \url{https://www.mdpi.com/2411-5134/5/1/10}.}
+
+\bibitem[Weber 1909]{weber1909}
+\abntrefinfo{Weber}{WEBER}{1909}
+{WEBER, A. \emph{Über den Standort der Industrien}. Tübingen: J.C.B. Mohr,
+  1909.}
+
+\end{thebibliography}

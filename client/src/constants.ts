@@ -1,0 +1,1 @@
+export const DEFAULT_RADIUS_SIZE = 20;

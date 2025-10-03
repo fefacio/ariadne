@@ -1,0 +1,8 @@
+.toolbar {
+  grid-column: 1 / span 2;
+  grid-row: 1;
+  background-color: lightblue;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

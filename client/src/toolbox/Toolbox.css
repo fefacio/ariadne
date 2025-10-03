@@ -1,0 +1,43 @@
+.toolbox {
+  grid-column: 1;
+  grid-row: 2;
+  background-color: bisque;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  border: 1px solid black;
+}
+
+.toolbox:first-child {
+    padding-top: 10px;
+}
+
+
+.toolbox-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+}
+
+.toolbox-button.active {
+    background: aliceblue;
+    border: 1px solid black;
+    border-radius: 3px;
+    
+}
+
+.toolbox-button:hover {
+    cursor: pointer;
+    border: 1px solid gray;
+}
+
+.icon {
+    width: 90%;    /* ← Tamanho que você quer */
+    height: 90%;
+    display: block;
+    background: none;
+}
