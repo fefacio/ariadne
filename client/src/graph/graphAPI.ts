@@ -22,7 +22,7 @@ class GraphAPIClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+    console.log("URL: "+ url);  
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
