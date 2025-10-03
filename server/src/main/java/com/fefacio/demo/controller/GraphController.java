@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "https://ariadne-backend-vd7f.onrender.com"})
 @RestController
-@RequestMapping("/api/graph")
+@RequestMapping("/graph")
 public class GraphController {
     @Autowired
     private GraphService graphService;
