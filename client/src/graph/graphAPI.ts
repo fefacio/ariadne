@@ -77,7 +77,6 @@ class GraphAPIClient {
     });
   };
 
-  // Batch operations
   createMultipleNodes = async (nodes: NodeRequest[]): Promise<number[]> => {
     const promises = nodes.map(node => this.createNode(node));
     return Promise.all(promises);
@@ -88,18 +87,13 @@ class GraphAPIClient {
     return Promise.all(promises);
   };
 
-  // Graph building helper
   buildGraph = async (graphData: {
     nodes: NodeRequest[];
     edges: EdgeRequest[];
   }): Promise<{ nodes: number[]; edges: number[] }> => {
-    // Clear existing graph
     await this.clearGraph();
     
-    // Create nodes first
     const nodes = await this.createMultipleNodes(graphData.nodes);
-    
-    // Then create edges
     const edges = await this.createMultipleEdges(graphData.edges);
     
     return { nodes, edges };
