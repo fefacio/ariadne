@@ -15,11 +15,10 @@ type GenerationType = typeof GenerationTypes[keyof typeof GenerationTypes]
 interface GenerateMenuPros {
     addNode: (x: number, y: number) => Promise<number>;
     addEdge: (node1Id: number, node2Id: number) => Promise<void>;
-    svgRef: React.RefObject<SVGSVGElement | null>;
     viewBox: { x: number, y: number, width: number, height: number };
 }
 
-export function GenerateMenuContent({addNode, addEdge, svgRef, viewBox}: GenerateMenuPros) {
+export function GenerateMenuContent({addNode, addEdge, viewBox}: GenerateMenuPros) {
     const [generationType, setGenerationType] = useState<GenerationType>(GenerationTypes.GRID_RANDOM);
     const [gridParams, setGridParams] = useState({
         numberOfNodes: 10,

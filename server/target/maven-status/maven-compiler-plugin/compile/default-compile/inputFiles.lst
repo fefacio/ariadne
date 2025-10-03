@@ -1,0 +1,9 @@
+/home/fernando/programming/ariadne2/server/src/main/java/com/fefacio/demo/DemoApplication.java
+/home/fernando/programming/ariadne2/server/src/main/java/com/fefacio/demo/controller/GraphController.java
+/home/fernando/programming/ariadne2/server/src/main/java/com/fefacio/demo/model/graph/Edge.java
+/home/fernando/programming/ariadne2/server/src/main/java/com/fefacio/demo/model/graph/Graph.java
+/home/fernando/programming/ariadne2/server/src/main/java/com/fefacio/demo/model/graph/Node.java
+/home/fernando/programming/ariadne2/server/src/main/java/com/fefacio/demo/model/graph/NodeType.java
+/home/fernando/programming/ariadne2/server/src/main/java/com/fefacio/demo/model/request/EdgeRequest.java
+/home/fernando/programming/ariadne2/server/src/main/java/com/fefacio/demo/model/request/NodeRequest.java
+/home/fernando/programming/ariadne2/server/src/main/java/com/fefacio/demo/service/GraphService.java

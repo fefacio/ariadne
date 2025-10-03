@@ -133,36 +133,3 @@ export function forceDirected(W: number, L: number, nodes: GraphNode[], edges: G
     }
     return nodePositionsSeries;
 }
-
-
-// 1
-// x
-
-// 2
-// x x
-
-// 3
-// x x
-// x
-
-// 4 
-// x x
-// x x
-
-// 5
-// x x x
-// x x
-
-// 6
-// x x x
-// x x x
-
-// 7 
-// x x x
-// x x x
-// x
-
-// 1: 1x1
-// 2-4: 2x2
-// 5-9: 3x3
-// 10-16: 4x4

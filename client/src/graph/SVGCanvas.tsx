@@ -206,7 +206,7 @@ export function SVGCanvas() {
         },
         MENU_GENERATE: { 
             title: "Generate Graph", 
-            content: <GenerateMenuContent addNode={nodeActions.add} addEdge={edgeActions.add} svgRef={svgRef} viewBox={viewBox}/> 
+            content: <GenerateMenuContent addNode={nodeActions.add} addEdge={edgeActions.add} viewBox={viewBox}/> 
         }
     };
 

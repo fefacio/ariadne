@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  spring-app:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: server:latest
+    ports:
+      - "8080:8080"
+  react-app:
+    build:
+      context: ./client
+      args:
+        VITE_APP_API_URL: http://localhost:8080/api/graph
+      dockerfile: Dockerfile
+    image: client:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      - spring-app

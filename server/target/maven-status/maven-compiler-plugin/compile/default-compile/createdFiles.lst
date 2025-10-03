@@ -1,0 +1,9 @@
+com/fefacio/demo/DemoApplication.class
+com/fefacio/demo/model/request/EdgeRequest.class
+com/fefacio/demo/model/graph/Node.class
+com/fefacio/demo/model/request/NodeRequest.class
+com/fefacio/demo/model/graph/Graph.class
+com/fefacio/demo/model/graph/NodeType.class
+com/fefacio/demo/service/GraphService.class
+com/fefacio/demo/controller/GraphController.class
+com/fefacio/demo/model/graph/Edge.class

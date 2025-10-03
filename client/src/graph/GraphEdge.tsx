@@ -9,7 +9,7 @@ interface EdgeProps {
 };
 
 export function GraphEdge({edgeId, nodeList, node1Id, node2Id}: EdgeProps){
-    const [edgeStyle, setEdgeStyle] = useState<React.CSSProperties>({
+    const [edgeStyle ] = useState<React.CSSProperties>({
             fill: "none",
             stroke: "black",
             strokeWidth: 4
