@@ -14,7 +14,7 @@ class GraphAPIClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl ?? import.meta.env.VITE_APP_API_URL;
+    this.baseUrl = baseUrl ?? import.meta.env.VITE_API_BASE_URL;
   }
 
   private async request<T>(
