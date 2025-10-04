@@ -7,10 +7,12 @@ export interface SessionContextType {
   isLoading: boolean;
   resetKey: number;
   openMenu: MenuType | null;
+  isServerReady: boolean;
   
   newSession: () => void;
   clearSession: () => void;
   setMode: (mode: Mode) => void;
   setIsLoading: (loading: boolean) => void;
   setOpenMenu: (menu: MenuType | null) => void;
+  setIsServerReady: (isReady: boolean) => void;
 }

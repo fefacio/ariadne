@@ -1,20 +1,28 @@
 interface NodeRequest {
   label?: string;
   type?: string;
-}
+};
 
 interface EdgeRequest {
   sourceId: number;
   targetId: number;
   weight?: number;
-}
+};
+
+interface HealthRequest {
+  isServerUp: boolean;
+};
 
 
 class GraphAPIClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl ?? import.meta.env.VITE_API_BASE_URL+"/graph";
+    if (import.meta.env.VITE_API_BASE_URL==undefined){
+      this.baseUrl = "http://localhost:8080/graph";
+    } else {
+      this.baseUrl = baseUrl ?? import.meta.env.VITE_API_BASE_URL+"/graph";
+    }
   }
 
   private async request<T>(
@@ -23,25 +31,33 @@ class GraphAPIClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     console.log("URL: "+ url);  
-    const response = await fetch(url, {
+
+    try {
+      const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
       ...options,
-    });
+      });
+      console.log("RESPONSE>ok"+response.ok);
+      console.log("RESPONSE>status"+response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      const contentType = response.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
+        return response.json();
+      } else {
+        return response.text() as T;
+      }
+    } catch (e) {
+      console.log("FETCH ERROR: ", e);
+      throw e;
     }
-
-    const contentType = response.headers.get('content-type');
-    if (contentType?.includes('application/json')) {
-      return response.json();
-    } else {
-      return response.text() as T;
-    }
+    
   }
 
   createNode = async (nodeData: NodeRequest): Promise<number> => {
@@ -98,6 +114,18 @@ class GraphAPIClient {
     
     return { nodes, edges };
   };
+
+  // [TODO?] MOVO THIS TO DIFFERENT API, AND IMPLEMENT ANOTHER CONTROLLER FOR HEALTH CHECK ONLY
+  checkHealth = async (): Promise<HealthRequest | null> => {
+    try {
+      return await this.request<HealthRequest>(`/health`, {
+        method: 'GET',
+      });
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return null;
+    }
+  };
 }
 
 const graphAPI = new GraphAPIClient();
@@ -106,4 +134,5 @@ export { GraphAPIClient, graphAPI };
 export type {
   NodeRequest,
   EdgeRequest,
+  HealthRequest
 };

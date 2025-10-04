@@ -7,7 +7,14 @@ import { useSession } from './context/session/useSession'
 function App() {
   const sessionContext = useSession();
   console.log(sessionContext.sessionId);
-
+  console.log("IS READY: "+sessionContext.isServerReady)
+  if (!sessionContext.isServerReady){
+    return (
+      <div> 
+        <p> Server is waking up! (~2 minutes)</p>
+      </div>
+    )
+  }
   return (
     <>
       <div className="grid-container">

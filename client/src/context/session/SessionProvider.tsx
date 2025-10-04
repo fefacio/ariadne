@@ -14,12 +14,35 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [resetKey, setResetKey] = useState<number>(0);
     const [openMenu, setOpenMenu] = useState<MenuType | null>(null);
+    const [isServerReady, setIsServerReady] = useState<boolean>(false);
 
-    const newSession = useCallback(() => {
-        console.log("NEW SESSION: "+sessionId);
+    const checkServerIsUp = useCallback(async () => {
+    console.log("Checking backend");
+    
+    try {
+        const response = await graphAPI.checkHealth();
+        console.log("RESPOSTA!!", response);
+
+        if (response && response.isServerUp) {
+            console.log("Backend ready!");
+            setIsServerReady(true);
+        } else {
+            throw new Error("Server is down");
+        }
+    } catch(e) {
+        console.warn("Backend not ready: ", e);
+        setTimeout(checkServerIsUp, 2000);
+    } 
     },
-    [sessionId])
+    []);
 
+    const newSession = useCallback( async () => {
+        console.log("NEW SESSION: "+sessionId);
+        checkServerIsUp();
+    },
+    [sessionId, checkServerIsUp])
+
+    
     const resetFrontend = useCallback(() => {
         console.log("RESETTING FRONTEND");
         setResetKey(prev => prev + 1); 
@@ -44,7 +67,7 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
     useEffect(() => {
         window.addEventListener('pageshow', newSession);
         window.addEventListener('pagehide', clearSession);
-        window.addEventListener('beforeunload', clearSession);  // Antes de sair
+        window.addEventListener('beforeunload', clearSession);  
         window.addEventListener('unload', clearSession);
 
         
@@ -66,8 +89,19 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
         setIsLoading,
         resetKey,
         openMenu,
-        setOpenMenu
-    }), [clearSession, currentMode, setMode, isLoading, newSession, sessionId, resetKey, openMenu, setOpenMenu]);
+        setOpenMenu,
+        isServerReady,
+        setIsServerReady
+    }), [clearSession, 
+        currentMode, 
+        setMode, 
+        isLoading, 
+        newSession, 
+        sessionId, 
+        resetKey, 
+        openMenu, 
+        setOpenMenu,
+        isServerReady]);
 
     return (
         <SessionContext.Provider value={sessionContext}>

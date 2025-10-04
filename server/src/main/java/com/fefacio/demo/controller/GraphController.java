@@ -1,5 +1,7 @@
 package com.fefacio.demo.controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -73,5 +75,10 @@ public class GraphController {
         System.out.println("[DELETE][/clear]");
         graphService.clearGraph();
     }
+
+    @GetMapping("/health")
+    public Map<String, Boolean> getHealth() {
+        return Map.of("isServerUp", true);
+    }   
 
 }
