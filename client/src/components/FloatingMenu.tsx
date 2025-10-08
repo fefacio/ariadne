@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "../context/session/useSession";
+import { useUIState } from "../context/uiState/useUIState";
 import "./FloatingMenu.css";
+import { MenuTypes, type MenuType } from "../types/types";
 
 
 interface FloatingMenuProps {
   title: string;
+  type: MenuType;
   children: React.ReactNode;
   initialPosition?: { x: number; y: number };
 }
 
 export function FloatingMenu({ 
-  title, 
+  title,
+  type, 
   children, 
   initialPosition = { x: 0, y: 0 }
 }: FloatingMenuProps) {
@@ -19,12 +22,11 @@ export function FloatingMenu({
     const isDragging = useRef<boolean>(false);
     const dragOffset = useRef({ x: 0, y: 0 });
     const menuRef = useRef<HTMLDivElement>(null);
-    const sessionContext = useSession();
+    const uiStateContext = useUIState();
 
     useEffect(() => {
         if (menuRef.current && menuRef.current.parentElement) {
             const container = menuRef.current.parentElement;
-            console.log(menuRef.current.parentElement.className+"SOMETIMES");
             const containerRect = container.getBoundingClientRect();
             const menuRect = menuRef.current.getBoundingClientRect();
             
@@ -89,7 +91,7 @@ export function FloatingMenu({
     return (
         <div 
         ref={menuRef}
-        className="floating-menu"
+        className= {`floating-menu${type === MenuTypes.MENU_EDIT_NODE ? "-edit" : ""}`}
         onMouseDown={handleDragStart}
         style={{
             position: 'absolute',
@@ -99,7 +101,7 @@ export function FloatingMenu({
         >
             <div className="floating-menu-header">
                 <h3>{title}</h3>
-                <button className="close-button" onClick={() => sessionContext.setOpenMenu(null)}>×</button>
+                <button className="close-button" onClick={() => uiStateContext.deleteMenu(type)}>×</button>
             </div>
             <div className="floating-menu-content">
                 {children}

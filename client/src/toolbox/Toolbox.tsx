@@ -7,6 +7,7 @@ import addEdgeIcon from "../assets/addEdgeIcon.svg";
 import addNodeIcon from "../assets/addNodeIcon.svg";
 import deleteIcon from "../assets/deleteIcon.svg";
 import deleteGraphIcon from "../assets/deleteGraphIcon.svg";
+import editIcon from "../assets/editIcon.svg"
 
 
 export function Toolbox(){
@@ -16,6 +17,7 @@ export function Toolbox(){
             <ToolboxButton iconSrc={addNodeIcon} altName={"Add Node"} mode={Modes.ADD_NODE}/>
             <ToolboxButton iconSrc={addEdgeIcon} altName={"Add Edge"} mode={Modes.ADD_EDGE}/>
             <ToolboxButton iconSrc={deleteIcon} altName={"Delete"} mode={Modes.DELETE}/>
+            <ToolboxButton iconSrc={editIcon} altName={"Edit"} mode={Modes.EDIT}/>
             <ToolboxButton iconSrc={deleteGraphIcon} altName={"Delete Graph"} mode={Modes.DELETE_GRAPH}/>
         </div>
     )

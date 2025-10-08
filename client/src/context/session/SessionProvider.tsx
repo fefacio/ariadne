@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from "react";
-import { type MenuType, Modes, type Mode } from "../../types/types";
+import { Modes, type Mode } from "../../types/types";
 import type { SessionContextType } from "./SessionContextType";
 import { SessionContext } from "./SessionContext";
 import { graphAPI } from "../../graph/graphAPI";
@@ -13,26 +13,25 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
     const [currentMode, setCurrentMode] = useState<Mode>(Modes.SELECT);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [resetKey, setResetKey] = useState<number>(0);
-    const [openMenu, setOpenMenu] = useState<MenuType | null>(null);
     const [isServerReady, setIsServerReady] = useState<boolean>(false);
 
     const checkServerIsUp = useCallback(async () => {
-    console.log("Checking backend");
-    
-    try {
-        const response = await graphAPI.checkHealth();
-        console.log("RESPOSTA!!", response);
+        console.log("Checking backend");
+        
+        try {
+            const response = await graphAPI.checkHealth();
+            console.log("RESPOSTA!!", response);
 
-        if (response && response.isServerUp) {
-            console.log("Backend ready!");
-            setIsServerReady(true);
-        } else {
-            throw new Error("Server is down");
-        }
-    } catch(e) {
-        console.warn("Backend not ready: ", e);
-        setTimeout(checkServerIsUp, 2000);
-    } 
+            if (response && response.isServerUp) {
+                console.log("Backend ready!");
+                setIsServerReady(true);
+            } else {
+                throw new Error("Server is down");
+            }
+        } catch(e) {
+            console.warn("Backend not ready: ", e);
+            setTimeout(checkServerIsUp, 2000);
+        } 
     },
     []);
 
@@ -88,8 +87,6 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
         isLoading,
         setIsLoading,
         resetKey,
-        openMenu,
-        setOpenMenu,
         isServerReady,
         setIsServerReady
     }), [clearSession, 
@@ -99,8 +96,6 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
         newSession, 
         sessionId, 
         resetKey, 
-        openMenu, 
-        setOpenMenu,
         isServerReady]);
 
     return (

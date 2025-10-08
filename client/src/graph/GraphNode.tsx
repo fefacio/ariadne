@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Modes, type Mode } from "../types/types";
+import { Modes, NodeTypes, type Mode, type NodeType } from "../types/types";
 import useViewBoxCoordinates from "../hooks/useViewBoxCoordinates";
 
 type NodeProps = {
@@ -8,6 +8,7 @@ type NodeProps = {
     cy: number;
     r: number;
     currentMode: Mode;
+    nodeType: NodeType;
     onPositionUpdate: (nodeId: number, newPosition: Position) => void;
 };
 
@@ -16,7 +17,7 @@ interface Position {
     y: number;
 };
 
-export function GraphNode({nodeId, cx, cy, r, currentMode, onPositionUpdate}: NodeProps) {
+export function GraphNode({nodeId, cx, cy, r, currentMode, nodeType, onPositionUpdate}: NodeProps) {
     const circleRef = useRef<SVGCircleElement>(null);
     const getViewBoxCoords = useViewBoxCoordinates(circleRef.current?.ownerSVGElement || null);
     const isDragging = useRef<boolean>(false);
@@ -62,19 +63,30 @@ export function GraphNode({nodeId, cx, cy, r, currentMode, onPositionUpdate}: No
     }
     
     return (
-        <>  
+        <g 
+        onMouseDown={handleDragStart}
+        data-node
+        data-node-id={nodeId}
+        className={"node"}>  
+            {nodeType ===  NodeTypes.CONSUMER && (
+                <circle
+                    cx={cx}
+                    cy={cy}
+                    r={r+5}
+                    style={{...nodeStyle}}
+                />
+            )}
             <circle
                 ref={circleRef}
-                data-node-id={nodeId}
                 cx={cx}
                 cy={cy}
                 r={r}
-                onMouseDown={handleDragStart}
-
-                className={`node${isSelectMode ? '-selected' : ''}`}
+                data-node-id={nodeId}
                 style={{...nodeStyle}}
             />
-        </>
+            
+
+        </g>
     )
 }
 /*

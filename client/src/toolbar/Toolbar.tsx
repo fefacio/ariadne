@@ -1,15 +1,15 @@
-import { useSession } from '../context/session/useSession';
+import { useUIState } from '../context/uiState/useUIState';
 import { MenuTypes } from '../types/types';
 import './Toolbar.css';
 
 export function Toolbar(){
-    const sessionContext = useSession();
+    const uiStateContext = useUIState();
     return (
         <div className="toolbar">
             <button>Hello</button>
             <button>Goodbye</button>
-            <button onClick={() => sessionContext.setOpenMenu(MenuTypes.MENU_DRAW)}>Drawing</button>
-            <button onClick={() => sessionContext.setOpenMenu(MenuTypes.MENU_GENERATE)}>Generate</button>
+            <button onClick={() => uiStateContext.addMenu(MenuTypes.MENU_DRAW)}>Drawing</button>
+            <button onClick={() => uiStateContext.addMenu(MenuTypes.MENU_GENERATE)}>Generate</button>
         </div>
     )
 }

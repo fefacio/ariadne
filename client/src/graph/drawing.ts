@@ -66,7 +66,7 @@ export function forceDirected(W: number, L: number, nodes: GraphNode[], edges: G
     const k = Math.sqrt(area/nodes.length);
     const nodesDraw: NodeDrawing[] = nodes.map(node => ({
         id: node.id,
-        pos: {x: node.cx, y: node.cy},
+        pos: {x: node.x, y: node.y},
         disp: {x:0, y: 0}
     }));
     const edgesDraw: EdgesDrawing[] = edges.map(edge => {

@@ -36,7 +36,7 @@ export function GraphEdge({edgeId, nodeList, node1Id, node2Id}: EdgeProps){
     return (
         <>
             <path d={
-                `M${node1.cx} ${node1.cy} L${node2.cx} ${node2.cy}`
+                `M${node1.x} ${node1.y} L${node2.x} ${node2.y}`
             }
             data-edge-id={edgeId}
             style={{...edgeStyle}}

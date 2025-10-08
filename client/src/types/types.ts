@@ -3,6 +3,7 @@ export const Modes = {
     ADD_NODE: "ADD_NODE", 
     ADD_EDGE: "ADD_EDGE",
     DELETE: "DELETE",
+    EDIT: "EDIT",
     DELETE_GRAPH: "DELETE_GRAPH"
 } as const;
 
@@ -18,9 +19,9 @@ export const NodeTypes = {
 export type NodeType = typeof NodeTypes[keyof typeof NodeTypes]
 
 export const MenuTypes = {
-    MENU_NODE: "MENU_NODE",
     MENU_DRAW: "MENU_DRAW",
-    MENU_GENERATE: "MENU_GENERATE"
+    MENU_GENERATE: "MENU_GENERATE",
+    MENU_EDIT_NODE: "MENU_EDIT_NODE"
 } as const;
 
 export type MenuType = typeof MenuTypes[keyof typeof MenuTypes]

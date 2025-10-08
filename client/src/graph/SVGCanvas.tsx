@@ -5,7 +5,7 @@ import React, { useCallback, useRef, useState} from "react";
 import useWindowDimensions from "../hooks/useWindowDimensions";
 
 import { GraphNode } from './GraphNode'
-import { Modes, type MenuType } from "../types/types";
+import { MenuTypes, Modes, NodeTypes, type MenuType, type NodeType } from "../types/types";
 import { DrawingTempState, EdgeCreation } from "./EdgeCreation";
 import { GraphEdge } from "./GraphEdge";
 import useViewBoxCoordinates from "../hooks/useViewBoxCoordinates";
@@ -16,15 +16,17 @@ import { useGraphNodes } from "./useGraphNodes";
 import { useGraphEdges } from "./useGraphEdges";
 import { useSession } from "../context/session/useSession";
 import { FloatingMenu } from "../components/FloatingMenu";
-import { NodeMenuContent } from "./menus/NodeMenuContent";
-import { DrawMenuContent } from "./menus/DrawMenuContent";
-import { GenerateMenuContent } from "./menus/GenerateMenuContent";
+import { EditNodeMenu } from "./menus/EditNodeMenu";
+import { DrawMenu } from "./menus/DrawMenu";
+import { GenerateMenu } from "./menus/GenerateMenu";
 import { DEFAULT_RADIUS_SIZE } from "../constants";
+import { useUIState } from "../context/uiState/useUIState";
 
 export interface GraphNode  {
     id: number;
-    cx: number;
-    cy: number;
+    x: number;
+    y: number;
+    type: NodeType;
 };
 
 export interface GraphEdge {
@@ -43,7 +45,9 @@ interface TempEdge {
 
 
 export function SVGCanvas() {
+    // Contexts
     const sessionContext = useSession();
+    const uiStateContext = useUIState();
     
     const {currentWindowSize} = useWindowDimensions();
     const [mouseCoords, setMouseCoords] = useState({x:0, y:0});
@@ -131,7 +135,6 @@ export function SVGCanvas() {
     
     const {edgeList, setEdgeList, edgeActions} = useGraphEdges();
     const {nodeList, nodeActions} = useGraphNodes(setEdgeList);
-    
 
 
 
@@ -144,7 +147,6 @@ export function SVGCanvas() {
     
     const [, forceRender] = useState({});
     const handleClickSVGCanvas = (event: React.MouseEvent<SVGSVGElement>) => {
-        console.log(sessionContext.openMenu+"AAA");
         if (!svgRef.current) return;
 
         setMouseCoords({x:event.clientX, y:event.clientY});
@@ -171,7 +173,7 @@ export function SVGCanvas() {
 
         if (sessionContext.currentMode===Modes.ADD_NODE) {
             console.log(svgCoords);
-            nodeActions.add(svgCoords.x, svgCoords.y);
+            nodeActions.add(svgCoords.x, svgCoords.y, NodeTypes.NORMAL);
         }
 
         if (sessionContext.currentMode===Modes.ADD_EDGE){
@@ -181,34 +183,61 @@ export function SVGCanvas() {
                 edgeCreation.clickEmpty();
                 forceRender({});
             }
-            
-            
         }
 
+        
         if (sessionContext.currentMode===Modes.DELETE) {
             if (clickedElement.tagName == "circle") {
                 const circleElement = clickedElement as SVGCircleElement;
                 const circleId = Number(circleElement.getAttribute("data-node-id"));
                 nodeActions.delete(circleId);
             }
-            
+        }
+
+        if (sessionContext.currentMode==Modes.EDIT){
+            if (clickedElement.parentElement?.hasAttribute("data-node")){
+                const circleElement = clickedElement as SVGCircleElement;
+                const circleId = Number(circleElement.getAttribute("data-node-id"));
+                console.log("nodeId CLicked"+circleId);
+                uiStateContext.addMenu(MenuTypes.MENU_EDIT_NODE, {nodeId: circleId});
+            }
         }
     }
 
     const menuConfig: Record<MenuType, { title: string; content: React.ReactNode; }> = {
-        MENU_NODE: { 
-            title: "Node", 
-            content: <NodeMenuContent /> 
+        MENU_EDIT_NODE: { 
+            title: "Edit Node", 
+            content: <></> 
         },
         MENU_DRAW: { 
             title: "Draw Options", 
-            content: <DrawMenuContent nodeList={nodeList} nodeActions={nodeActions} edgeList={edgeList} viewBox={viewBox} /> 
+            content: <DrawMenu nodeList={nodeList} nodeActions={nodeActions} edgeList={edgeList} viewBox={viewBox} /> 
         },
         MENU_GENERATE: { 
             title: "Generate Graph", 
-            content: <GenerateMenuContent addNode={nodeActions.add} addEdge={edgeActions.add} viewBox={viewBox}/> 
+            content: <GenerateMenu addNode={nodeActions.add} addEdge={edgeActions.add} viewBox={viewBox}/> 
         }
     };
+
+    const openMenuComponents = uiStateContext.openMenuList.map(openMenu => {
+        const config = menuConfig[openMenu.type];
+        let content: React.ReactNode;
+
+        if (openMenu.type===MenuTypes.MENU_EDIT_NODE){
+            const nodeId = openMenu.metadata?.nodeId;
+            if (!nodeId) {
+                return null
+            }
+            content = <EditNodeMenu nodeId={nodeId} nodeActions={nodeActions}/>
+        } else {
+            content = config.content
+        }
+        return (
+            <FloatingMenu key={openMenu.id} title={config.title} type={openMenu.type}>
+                {content}
+            </FloatingMenu>
+        )
+    })
 
     
 
@@ -216,10 +245,11 @@ export function SVGCanvas() {
         <GraphNode 
             key={node.id}
             nodeId={node.id} 
-            cx={node.cx} 
-            cy={node.cy} 
+            cx={node.x} 
+            cy={node.y} 
             r={DEFAULT_RADIUS_SIZE}
             currentMode={sessionContext.currentMode}
+            nodeType={node.type}
             onPositionUpdate={nodeActions.updatePosition}/>
     )
 
@@ -258,7 +288,7 @@ export function SVGCanvas() {
             {clickedCircle && (
                 <>
                 <span style={{ background: "rgba(1, 255, 107, 1)" }}>Clicked Circle:</span>{" "}
-                {clickedCircle.cx} | {clickedCircle.cy}
+                {clickedCircle.x} | {clickedCircle.y}
                 </>
             )}
             </p>
@@ -269,12 +299,7 @@ export function SVGCanvas() {
                 height:{viewBox.height.toFixed(2)} |
             </p>
             <p style={{background: "yellow"}}> {sessionContext.currentMode} </p>
-            {sessionContext.openMenu && menuConfig[sessionContext.openMenu] && (
-                    <FloatingMenu title={menuConfig[sessionContext.openMenu].title}>
-                        {menuConfig[sessionContext.openMenu].content}
-                    </FloatingMenu>
-
-                )}
+            {openMenuComponents}
             <svg version="1.1"
                 xmlns="http://www.w3.org/2000/svg"
                 width={800}

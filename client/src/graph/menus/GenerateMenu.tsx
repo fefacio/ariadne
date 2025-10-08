@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Position } from "../../types/types";
+import { NodeTypes, type NodeType, type Position } from "../../types/types";
 import { generateGridRandom, generateRandom } from "../generate";
 import "./Menus.css";
 
@@ -12,13 +12,13 @@ const GenerationTypes = {
 
 type GenerationType = typeof GenerationTypes[keyof typeof GenerationTypes]
 
-interface GenerateMenuPros {
-    addNode: (x: number, y: number) => Promise<number>;
+interface GenerateMenuProps {
+    addNode: (x: number, y: number, type: NodeType) => Promise<number>;
     addEdge: (node1Id: number, node2Id: number) => Promise<void>;
     viewBox: { x: number, y: number, width: number, height: number };
 }
 
-export function GenerateMenuContent({addNode, addEdge, viewBox}: GenerateMenuPros) {
+export function GenerateMenu({addNode, addEdge, viewBox}: GenerateMenuProps) {
     const [generationType, setGenerationType] = useState<GenerationType>(GenerationTypes.GRID_RANDOM);
     const [gridParams, setGridParams] = useState({
         numberOfNodes: 10,
@@ -41,7 +41,7 @@ export function GenerateMenuContent({addNode, addEdge, viewBox}: GenerateMenuPro
         const idMap = new Map<number, number>();
         for (const node of nodes){
             const oldId = node.id;
-            const newId = await addNode(node.cx, node.cy);
+            const newId = await addNode(node.x, node.y, NodeTypes.NORMAL);
             node.id = newId;
             idMap.set(oldId, newId);
         }

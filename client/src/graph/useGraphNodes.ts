@@ -1,26 +1,28 @@
 import { useCallback, useState } from "react"
 import type { GraphEdge, GraphNode } from "./SVGCanvas";
-import { type Position } from "../types/types";
+import { type NodeType, type Position } from "../types/types";
 import { graphAPI } from "./graphAPI";
 
 export interface NodeActions {
-    add: (x:number, y:number) => Promise<number>; 
+    add: (x:number, y:number, type:NodeType) => Promise<number>; 
     delete: (id: number) => Promise<void>;
     updatePosition: (id: number, newPosition: Position) => void;
+    updateType: (id: number, type: NodeType) => void;
     getById:  (id: number) => GraphNode | undefined;
 };
 
 export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<GraphEdge[]>>) => {
     const [nodeList, setNodeList] = useState<GraphNode[]>([]);
     
-    const addNode = useCallback(async (x: number, y: number) => {
+    const addNode = useCallback(async (x: number, y: number, type:NodeType) => {
         let newNodeId: number = 0;
         try {
             newNodeId = await graphAPI.createNode({});
             const newNode: GraphNode = {
                 id: newNodeId,
-                cx: x,
-                cy: y,
+                x: x,
+                y: y,
+                type: type
             }
             setNodeList(prev => [...prev, newNode]);
         } catch (error) {
@@ -48,20 +50,40 @@ export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<G
         console.log("newPosition:"+newPosition.x)
         setNodeList(prev =>
             prev.map(node =>
-                node.id === id ? { ...node, cx: newPosition.x, cy: newPosition.y } : node
+                node.id === id ? { ...node, x: newPosition.x, y: newPosition.y } : node
             )
         );
     }, []);
+
+    const updateNodeType = useCallback((id: number, newType: NodeType) => {
+        console.log("NewType:"+newType);
+        setNodeList(prev => {
+            const updatedList = prev.map(node =>
+                node.id === id ? { ...node, type: newType } : node
+            );
+            for (const node of updatedList) {
+                console.log("node-id: " + node.id + " type: " + node.type);
+            }
+            return updatedList;
+        });
+    }, 
+    []);
     
     const getNodeById = useCallback((id: number) => {
-        return nodeList.find(node => node.id === id);
+        const node = nodeList.find(node => node.id === id);
+        if (!node) {
+            throw new Error(`Node with id ${id} not found`);
+        }
+        return node;
     }, [nodeList]);
+
 
 
     const nodeActions: NodeActions = {
         add: addNode,
         delete: deleteNode,
         updatePosition: updateNodePosition,
+        updateType: updateNodeType,
         getById: getNodeById
     }
 

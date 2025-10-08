@@ -6,6 +6,14 @@
   border: 2px black solid;
 }
 
+.floating-menu-edit {
+  position: absolute; 
+  background-color: rgb(247, 227, 125);
+  width: 200px;
+  min-height: 200px;
+  border: 2px black solid;
+}
+
 .floating-menu-header {
   display: flex;
   flex-direction: row;

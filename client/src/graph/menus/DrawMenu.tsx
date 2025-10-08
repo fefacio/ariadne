@@ -9,7 +9,7 @@ interface DrawMenuProps {
     viewBox: { x: number, y: number, width: number, height: number };
 };
 
-export function DrawMenuContent({nodeList, nodeActions, edgeList, viewBox}: DrawMenuProps) {
+export function DrawMenu({nodeList, nodeActions, edgeList, viewBox}: DrawMenuProps) {
     const handleDraw = () => {
         const series = forceDirected(viewBox.width, viewBox.height, nodeList, edgeList, 1);
         const positions = series[series.length - 1].positions;
