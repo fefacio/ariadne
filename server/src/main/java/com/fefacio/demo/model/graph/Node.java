@@ -14,6 +14,9 @@ public class Node {
         this.type = type;
         this.id = count.incrementAndGet();
     }
+    public Node(NodeType type) {
+        this("", type);
+    }
     public Node() {
         this("", NodeType.NORMAL);
     }

@@ -31,11 +31,24 @@ public class GraphService {
         if(nodeRequest.getLabel()!=null){
             node = new Node(nodeRequest.getLabel(), nodeType);
         } else  {
-            node = new Node();
+            node = new Node(nodeType);
         }
 
         graph.addNode(node);
         return node.getId();
+    }
+
+    public Node updateNode(Integer nodeId, NodeRequest nodeRequest){
+        StringBuilder sb = new StringBuilder("Update node: Old ");
+        Node node = graph.getNodeById(nodeId);
+        sb.append(node.toString());
+        if (nodeRequest.getType()!=null){
+            node.setType(NodeType.valueOf(nodeRequest.getType().toUpperCase()));
+        }
+        sb.append("| New ");
+        sb.append(node.toString());
+        System.out.println(sb.toString());
+        return node;
     }
 
     public boolean removeNode(Integer nodeId){

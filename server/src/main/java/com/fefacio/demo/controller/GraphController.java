@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+
 
 
 
@@ -38,6 +40,11 @@ public class GraphController {
     @PostMapping("/node")
     public Integer createNode(@RequestBody NodeRequest nodeRequest) {
         return graphService.addNode(nodeRequest);
+    }
+
+    @PutMapping("/node/{nodeId}")
+    public Node putNode(@PathVariable Integer nodeId, @RequestBody NodeRequest nodeRequest) {
+        return graphService.updateNode(nodeId, nodeRequest);
     }
 
     @DeleteMapping("/node/{nodeId}")

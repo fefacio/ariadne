@@ -7,17 +7,17 @@ export interface NodeActions {
     add: (x:number, y:number, type:NodeType) => Promise<number>; 
     delete: (id: number) => Promise<void>;
     updatePosition: (id: number, newPosition: Position) => void;
-    updateType: (id: number, type: NodeType) => void;
+    updateType: (id: number, type: NodeType) => Promise<void>;
     getById:  (id: number) => GraphNode | undefined;
 };
 
 export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<GraphEdge[]>>) => {
     const [nodeList, setNodeList] = useState<GraphNode[]>([]);
     
-    const addNode = useCallback(async (x: number, y: number, type:NodeType) => {
+    const addNode = useCallback(async (x: number, y: number, type: NodeType) => {
         let newNodeId: number = 0;
         try {
-            newNodeId = await graphAPI.createNode({});
+            newNodeId = await graphAPI.createNode({type: type});
             const newNode: GraphNode = {
                 id: newNodeId,
                 x: x,
@@ -55,17 +55,24 @@ export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<G
         );
     }, []);
 
-    const updateNodeType = useCallback((id: number, newType: NodeType) => {
-        console.log("NewType:"+newType);
-        setNodeList(prev => {
-            const updatedList = prev.map(node =>
-                node.id === id ? { ...node, type: newType } : node
-            );
-            for (const node of updatedList) {
-                console.log("node-id: " + node.id + " type: " + node.type);
-            }
-            return updatedList;
-        });
+    const updateNodeType = useCallback(async (id: number, newType: NodeType) => {
+        try {
+            await graphAPI.updateNode(id, {type: newType});
+            console.log("NewType:"+newType);
+            setNodeList(prev => {
+                const updatedList = prev.map(node =>
+                    node.id === id ? { ...node, type: newType } : node
+                );
+                for (const node of updatedList) {
+                    console.log("node-id: " + node.id + " type: " + node.type);
+                }
+                return updatedList;
+            });
+        } catch(error) {
+            console.error("[ERROR] WHILE CREATING NODE: "+error);
+            throw error;
+        }
+       
     }, 
     []);
     

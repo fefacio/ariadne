@@ -67,11 +67,20 @@ class GraphAPIClient {
     });
   };
 
+  updateNode = async (nodeId: number, nodeData: NodeRequest): Promise<number> => {
+    return this.request<number>(`/node/${nodeId}`, {
+      method: 'PUT',
+      body: JSON.stringify(nodeData),
+    });
+  };
+
   deleteNode = async (nodeId: number): Promise<void> => {
     return this.request<void>(`/node/${nodeId}`, {
       method: 'DELETE',
     });
   };
+
+
 
   createEdge = async (edgeData: EdgeRequest): Promise<number> => {
     return this.request<number>('/edge', {

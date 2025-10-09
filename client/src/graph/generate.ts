@@ -1,11 +1,30 @@
 import { DEFAULT_RADIUS_SIZE } from "../constants";
-import type { Position } from "../types/types";
+import { NodeTypes, type NodeType, type Position } from "../types/types";
 import type { GraphEdge, GraphNode } from "./SVGCanvas";
 
 interface Graph {
     nodes: GraphNode[];
     edges: GraphEdge[];
 }
+
+function getRandomNodeType(): NodeType {
+    const nodePercentages = {
+        "NORMAL": 0.8,
+        "CONSUMER": 0.2
+    }
+
+    const random = Math.random();
+    let cumulative = 0;
+
+    for (const [type, probability] of Object.entries(nodePercentages) as [string, number][]) {
+        cumulative += probability;
+        if (random < cumulative) {
+            return type as NodeType;
+        }
+    }
+    return NodeTypes.NORMAL;
+}
+
 export function generateGridPositions(
     numberOfNodes: number, 
     spacing: number, 
@@ -21,8 +40,9 @@ export function generateGridPositions(
             const noiseValue = isNoise ? Math.random() * (noisePercentage/100 * spacing) : 0;
             positions.push({
                 id: positions.length,
-                cx: j*(2*DEFAULT_RADIUS_SIZE+spacing)+initialPosition.x + noiseValue,
-                cy: i*(2*DEFAULT_RADIUS_SIZE+spacing)+initialPosition.y + noiseValue
+                x: j*(2*DEFAULT_RADIUS_SIZE+spacing)+initialPosition.x + noiseValue,
+                y: i*(2*DEFAULT_RADIUS_SIZE+spacing)+initialPosition.y + noiseValue,
+                type: NodeTypes.NORMAL
             })
             if (positions.length === numberOfNodes) {
                 return positions; 
@@ -75,8 +95,9 @@ export function generateRandom(count: number, width: number, height: number): Gr
     for (let i=0; i<count; i++){
         nodes.push({
             id: i,
-            cx: Math.random() * width,
-            cy: Math.random() * height
+            x: Math.random() * width,
+            y: Math.random() * height,
+            type: getRandomNodeType()
         })
     }
     const edges: GraphEdge[] = generateRandomEdges(nodes);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NodeTypes, type NodeType, type Position } from "../../types/types";
+import { type NodeType, type Position } from "../../types/types";
 import { generateGridRandom, generateRandom } from "../generate";
 import "./Menus.css";
 
@@ -41,7 +41,7 @@ export function GenerateMenu({addNode, addEdge, viewBox}: GenerateMenuProps) {
         const idMap = new Map<number, number>();
         for (const node of nodes){
             const oldId = node.id;
-            const newId = await addNode(node.x, node.y, NodeTypes.NORMAL);
+            const newId = await addNode(node.x, node.y, node.type);
             node.id = newId;
             idMap.set(oldId, newId);
         }
