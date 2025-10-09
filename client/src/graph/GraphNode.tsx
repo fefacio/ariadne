@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Modes, NodeTypes, type Mode, type NodeType } from "../types/types";
 import useViewBoxCoordinates from "../hooks/useViewBoxCoordinates";
+import { DEFAULT_FACILITY_HEIGHT, DEFAULT_FACILITY_WIDTH } from "../constants";
 
 type NodeProps = {
     nodeId: number;
@@ -84,6 +85,15 @@ export function GraphNode({nodeId, cx, cy, r, currentMode, nodeType, onPositionU
                 data-node-id={nodeId}
                 style={{...nodeStyle}}
             />
+            {nodeType ===  NodeTypes.FACILITY && (
+                <rect
+                    x={cx-DEFAULT_FACILITY_WIDTH/2}
+                    y={cy-DEFAULT_FACILITY_HEIGHT/2}
+                    width={DEFAULT_FACILITY_WIDTH}
+                    height={DEFAULT_FACILITY_HEIGHT}
+                    style={{...nodeStyle}}
+                />
+            )}
             
 
         </g>

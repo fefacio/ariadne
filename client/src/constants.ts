@@ -1,1 +1,3 @@
 export const DEFAULT_RADIUS_SIZE = 20;
+export const DEFAULT_FACILITY_WIDTH = 20;
+export const DEFAULT_FACILITY_HEIGHT = 20;
