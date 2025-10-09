@@ -32,3 +32,8 @@
   stroke: greenyellow;
   fill:red;
 }
+
+.add-node-form {
+  display: flex;
+  gap: 10px;
+}

@@ -2,7 +2,7 @@
 
 import "./SVGCanvas.css";
 import React, { useCallback, useRef, useState} from "react";
-import useWindowDimensions from "../hooks/useWindowDimensions";
+//import useWindowDimensions from "../hooks/useWindowDimensions";
 
 import { GraphNode } from './GraphNode'
 import { MenuTypes, Modes, NodeTypes, type MenuType, type NodeType } from "../types/types";
@@ -21,6 +21,7 @@ import { DrawMenu } from "./menus/DrawMenu";
 import { GenerateMenu } from "./menus/GenerateMenu";
 import { DEFAULT_RADIUS_SIZE } from "../constants";
 import { useUIState } from "../context/uiState/useUIState";
+import { AddNodeForm } from "./AddNodeForm";
 
 export interface GraphNode  {
     id: number;
@@ -49,7 +50,7 @@ export function SVGCanvas() {
     const sessionContext = useSession();
     const uiStateContext = useUIState();
     
-    const {currentWindowSize} = useWindowDimensions();
+    //const {currentWindowSize} = useWindowDimensions();
     const [mouseCoords, setMouseCoords] = useState({x:0, y:0});
     const [svgCoords, setSvgCoords] = useState({x:0, y:0});
     const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 500, height: 500 });
@@ -135,6 +136,7 @@ export function SVGCanvas() {
     
     const {edgeList, setEdgeList, edgeActions} = useGraphEdges();
     const {nodeList, nodeActions} = useGraphNodes(setEdgeList);
+    const [addNodeType, setAddNodeType] = useState<NodeType>(NodeTypes.NORMAL);
 
 
 
@@ -173,7 +175,7 @@ export function SVGCanvas() {
 
         if (sessionContext.currentMode===Modes.ADD_NODE) {
             console.log(svgCoords);
-            nodeActions.add(svgCoords.x, svgCoords.y, NodeTypes.NORMAL);
+            nodeActions.add(svgCoords.x, svgCoords.y, addNodeType);
         }
 
         if (sessionContext.currentMode===Modes.ADD_EDGE){
@@ -281,7 +283,10 @@ export function SVGCanvas() {
 
     return (
         <div className="svgCanvas">
-            <p> {currentWindowSize.width} {currentWindowSize.height}</p>
+            {sessionContext.currentMode===Modes.ADD_NODE && 
+                <AddNodeForm addNodeType={addNodeType} setAddNodeType={setAddNodeType}/>
+            }
+            {/* <p> {currentWindowSize.width} {currentWindowSize.height}</p> */}
             <p> <span style={{background: "rgba(184, 159, 159, 1)"}}>mouseCoords: </span>{mouseCoords.x.toFixed(2)} {mouseCoords.y.toFixed(2)}</p>
             <p> <span style={{background: "rgba(247, 232, 150, 1)"}}>svgCoords: </span> {svgCoords.x.toFixed(2)} {svgCoords.y.toFixed(2)}</p>
             <p>
