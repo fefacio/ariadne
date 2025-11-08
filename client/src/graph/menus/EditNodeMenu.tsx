@@ -31,7 +31,7 @@ export function EditNodeMenu({nodeId, nodeActions}: EditNodeMenuProps) {
 
     return (
         <div>
-            <p> Node </p>
+            <p> Node {nodeId} </p>
             <div className="params">
                 <label htmlFor="nodeType">Node Type: </label>
                 <select

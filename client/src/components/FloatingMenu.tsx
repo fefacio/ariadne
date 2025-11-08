@@ -32,7 +32,7 @@ export function FloatingMenu({
             
             setPosition({
                 x: (containerRect.width - menuRect.width) / 2,
-                y: (containerRect.height - menuRect.height) / 2
+                y: 0
             });
         }
     }, []);
@@ -91,7 +91,11 @@ export function FloatingMenu({
     return (
         <div 
         ref={menuRef}
-        className= {`floating-menu${type === MenuTypes.MENU_EDIT_NODE ? "-edit" : ""}`}
+        className= {`floating-menu${
+            type === MenuTypes.MENU_EDIT_NODE || 
+            type === MenuTypes.MENU_EDIT_EDGE 
+                ? "-edit" 
+                : ""}`}
         onMouseDown={handleDragStart}
         style={{
             position: 'absolute',
@@ -100,7 +104,7 @@ export function FloatingMenu({
         }}
         >
             <div className="floating-menu-header">
-                <h3>{title}</h3>
+                <h3 className="floating-menu-title">{title}</h3>
                 <button className="close-button" onClick={() => uiStateContext.deleteMenu(type)}>×</button>
             </div>
             <div className="floating-menu-content">

@@ -7,12 +7,17 @@ public class Node {
     private Integer id;
     private String label;
     private NodeType type;
+    private Double demand;
 
-   
-    public Node(String label, NodeType type) {
+    
+    public Node(String label, NodeType type, Double demand){
         this.label = label;
         this.type = type;
+        this.demand = demand;
         this.id = count.incrementAndGet();
+    }
+    public Node(String label, NodeType type) {
+        this(label, type, null);
     }
     public Node(NodeType type) {
         this("", type);
@@ -30,8 +35,11 @@ public class Node {
     public NodeType getType() { return type; }
     public void setType(NodeType type) { this.type = type; }
 
+    public Double getDemand() { return demand; }
+    public void setDemand(Double demand) { this.demand = demand; }
+
     @Override
     public String toString() {
-        return "Node [id=" + id + ", label=" + label + ", type=" + type + "]";
+        return "Node [id=" + id + ", label=" + label + ", type=" + type + ", demand=" + demand + "]";
     }
 }

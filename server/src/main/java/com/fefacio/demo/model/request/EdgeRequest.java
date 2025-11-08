@@ -9,6 +9,12 @@ public class EdgeRequest {
     private Integer targetId;
     private Double weight;
 
+    public EdgeRequest(@NotNull Integer sourceId, @NotNull Integer targetId, Double weight) {
+        this.sourceId = sourceId;
+        this.targetId = targetId;
+        this.weight = weight;
+    }
+
     public Integer getSourceId() { return sourceId; }
     public void setSourceId(Integer sourceId) { this.sourceId = sourceId; }
 

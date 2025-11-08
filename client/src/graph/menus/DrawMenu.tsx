@@ -1,29 +1,61 @@
-import { forceDirected } from "../drawing";
-import type { GraphEdge, GraphNode } from "../SVGCanvas"
+import { generateGridPositions } from "../generation/generationGrid";
+import { generateRingPositions } from "../generation/generationRing";
+import type { GraphNode } from "../SVGCanvas"
 import type { NodeActions } from "../useGraphNodes"
 
 interface DrawMenuProps {
     nodeList: GraphNode[];
     nodeActions: NodeActions;
-    edgeList: GraphEdge[];
     viewBox: { x: number, y: number, width: number, height: number };
 };
 
-export function DrawMenu({nodeList, nodeActions, edgeList, viewBox}: DrawMenuProps) {
-    const handleDraw = () => {
-        const series = forceDirected(viewBox.width, viewBox.height, nodeList, edgeList, 1);
-        const positions = series[series.length - 1].positions;
-        console.log("U2"+positions);
-        for (let i=0; i<positions.length; i++){
-            console.log("ZDE"+positions[i].x+"ZZZ"+positions[i].y);
-            nodeActions.updatePosition(nodeList[i].id, positions[i]);
+export function DrawMenu({nodeList, nodeActions, viewBox}: DrawMenuProps) {
+    const handleDrawRing = () => {
+        const {nodes: ringPositions } = generateRingPositions(
+            nodeList.length,
+            10,
+            {x: viewBox.x+40, y:viewBox.y+40},
+            false
+        );
+        let i=0;
+        for (const node of nodeList){
+            nodeActions.updatePosition(node.id, {
+                x: ringPositions[i].x, 
+                y: ringPositions[i].y
+            });
+            i++;
+        }
+    }
+
+    const handleDrawGrid = () => {
+        const gridPositions = generateGridPositions(
+            nodeList.length,
+            100,
+            {x: viewBox.x+40, y:viewBox.y+40},
+            false
+        );
+        let i=0;
+        for (const node of nodeList){
+            nodeActions.updatePosition(node.id, {
+                x: gridPositions[i].x, 
+                y: gridPositions[i].y
+            });
+            i++;
         }
     }
     return (
-        <>
-            <p> Drawing </p>
-            <button onClick={() => handleDraw()}> Draw forceDiercted</button>
-        </>
+        <div className="drawing">  
+            <span className="drawing-method"> Drawing method</span>
+            <div className="params-group">
+                <span> Ring: </span>
+                <button onClick={() => handleDrawRing()}> Draw Ring</button>
+                <span> Grid: </span>
+                <button onClick={() => handleDrawGrid()}> Draw Grid</button>
+            </div>
+            
+            
+            
+        </div>
     )
 }
 

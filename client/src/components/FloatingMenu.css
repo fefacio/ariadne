@@ -1,31 +1,65 @@
-.floating-menu {
-  position: absolute; 
-  background-color: rgb(243, 254, 139);
-  width: 200px;
-  min-height: 200px;
-  border: 2px black solid;
+.floating-menu,
+.floating-menu-edit {
+    position: absolute; 
+    background-color: rgb(243, 254, 139);
+    width: 300px;
+    min-height: 200px;
+    max-height: 100%;
+    border: 2px black solid;
+    box-shadow: 5px 5px 5px rgb(57, 57, 50);
+    display: flex;
+    flex-direction: column;
+    
 }
 
 .floating-menu-edit {
-  position: absolute; 
-  background-color: rgb(247, 227, 125);
-  width: 200px;
-  min-height: 200px;
-  border: 2px black solid;
-}
-
-.floating-menu-header {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between; 
-  align-items: center; 
-  padding: 0.5rem; 
-}
-
-.close-button {
-  color: red
+    background-color: rgb(255, 224, 113);
 }
 
 .floating-menu-content {
-  padding-left: 5px;      
-} 
+    padding-left: 5px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+}
+
+.floating-menu-header {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end; 
+    align-items: center; 
+    padding: 1rem; 
+}
+
+.floating-menu-title {
+    font-size: 20px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    margin: 0;
+}
+
+.close-button {
+    color: red
+}
+
+.floating-menu-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.floating-menu-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.floating-menu-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.floating-menu-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+

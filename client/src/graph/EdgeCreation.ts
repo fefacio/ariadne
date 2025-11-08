@@ -6,7 +6,8 @@ export class EdgeCreation {
     private sourceNodePosition: {x: number, y:number} | null = null;
     private targetNodeId: number | null = null;
     private targetNodePosition: {x: number, y:number} | null = null;
-    public onEdgeComplete: (node1Id: number, node2Id: number, weight?: number) => Promise<void>;
+    private weight: number = 1;
+    public onEdgeComplete: (node1Id: number, node2Id: number, weight: number) => Promise<void>;
 
     constructor(
         svgRef: React.RefObject<SVGSVGElement | null>, 
@@ -24,8 +25,10 @@ export class EdgeCreation {
         this.state.setContext(this);
     }
 
-    public clickCircle(node : SVGCircleElement){
-        this.state.clickCircle(node);
+    public async clickCircle(node : SVGCircleElement, weight: number): Promise<void> {
+        this.weight = weight;
+        console.log("SET WEIGHT+ "+weight);
+        await this.state.clickCircle(node);
     }
 
     public clickEmpty(){
@@ -38,6 +41,7 @@ export class EdgeCreation {
         this.sourceNodePosition = null;
         this.targetNodeId = null;
         this.targetNodePosition = null;
+        this.weight = 1;
     }
 
     // Getters | Setters 
@@ -54,8 +58,8 @@ export class EdgeCreation {
     setTargetNodePosition(pos: {x: number, y: number}) { this.targetNodePosition = pos; }
 
     getSvgRef() { return this.svgRef; }
-
     getState() { return this.state; }
+    getWeight() { return this.weight }
 }
 
 
@@ -66,14 +70,14 @@ abstract class EdgeCreationState {
         this.context = context;
     }
 
-    abstract clickCircle(node: SVGCircleElement): void;
+    abstract clickCircle(node: SVGCircleElement): Promise<void>;
     abstract clickEmpty(): void;
 }
 
 
 
 export class IdleState extends EdgeCreationState {
-    clickCircle(node: SVGCircleElement): void {
+    async clickCircle(node: SVGCircleElement): Promise<void> {
         const nodeId: number = Number(node.getAttribute("data-node-id"));
         console.log("ALL THE GOOD TIMES"+nodeId);
         const position = {
@@ -92,9 +96,8 @@ export class IdleState extends EdgeCreationState {
 }
 
 export class DrawingTempState extends EdgeCreationState {
-    clickCircle(node: SVGCircleElement): void {
+    async clickCircle(node: SVGCircleElement): Promise<void> {
         const nodeId: number = Number(node.getAttribute("data-node-id"));
-        console.log("NOW WHEN I THINK ABOUT ALL THE GOOD TIMES"+nodeId);
         const position = {
             x: node.cx.baseVal.value,
             y: node.cy.baseVal.value
@@ -105,9 +108,10 @@ export class DrawingTempState extends EdgeCreationState {
 
         console.log("GGG1"+this.context.getSourceNodeId()!);
         console.log("GGG2"+this.context.getTargetNodeId()!);
-        this.context.onEdgeComplete(
+        await this.context.onEdgeComplete(
             this.context.getSourceNodeId()!,
             this.context.getTargetNodeId()!,
+            this.context.getWeight()
         )
 
         this.context.cleanup();

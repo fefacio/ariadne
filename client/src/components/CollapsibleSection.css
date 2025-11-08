@@ -1,0 +1,75 @@
+.collapsible-section {
+    margin-right: 12px;
+    border: 2px solid #000000;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgb(249, 253, 143);
+}
+
+.collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgb(250, 232, 37);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.collapsible-header:hover {
+    background: rgb(206, 209, 4);
+}
+
+.collapsible-title { 
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+}
+
+.collapsible-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: color 0.2s;
+}
+
+.collapsible-toggle:hover {
+    color: #333;
+}
+
+.chevron {
+    transition: transform 0.3s ease;
+}
+
+.chevron.open {
+    transform: rotate(0deg);
+}
+
+.chevron:not(.open) {
+    transform: rotate(-90deg);
+}
+
+.collapsible-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+}
+
+.collapsible-content.open {
+    grid-template-rows: 1fr;
+}
+
+.collapsible-content-inner {
+    overflow: hidden;
+    padding: 0 12px;
+}
+
+.collapsible-content.open .collapsible-content-inner {
+    padding: 12px;
+}

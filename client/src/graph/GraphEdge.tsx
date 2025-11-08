@@ -1,20 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { GraphNode } from "./SVGCanvas";
+import { type EdgeStyle } from "../styles";
 
 interface EdgeProps {
     edgeId: number;
     nodeList: GraphNode[];
     node1Id: number;
-    node2Id: number; 
+    node2Id: number;
+    weight: number;
+    edgeInnerStyle: EdgeStyle;
+    edgeOuterStyle: EdgeStyle;
 };
 
-export function GraphEdge({edgeId, nodeList, node1Id, node2Id}: EdgeProps){
-    const [edgeStyle ] = useState<React.CSSProperties>({
-            fill: "none",
-            stroke: "black",
-            strokeWidth: 4
-    })
-
+export function GraphEdge({edgeId, nodeList, node1Id, node2Id, weight, edgeInnerStyle, edgeOuterStyle}: EdgeProps){
     const { node1, node2 } = useMemo(() => {
         let foundNode1 = null;
         let foundNode2 = null;
@@ -33,15 +31,50 @@ export function GraphEdge({edgeId, nodeList, node1Id, node2Id}: EdgeProps){
         return null;
     }
 
+    // const getFinalStyle = (): React.CSSProperties => {
+    //     const baseStyle = edgeStyle ?? EDGE_STYLES.DEFAULT;
+
+    //     const style: React.CSSProperties = {
+    //         stroke: baseStyle.stroke,
+    //         strokeWidth: baseStyle.strokeWidth,
+    //     };
+
+    //     return style;
+    // };
+    
+    // const finalStyle = getFinalStyle();
+
     return (
-        <>
+        <g
+        data-edge
+        data-edge-id={edgeId}
+        className={"edge"}>
             <path d={
                 `M${node1.x} ${node1.y} L${node2.x} ${node2.y}`
             }
+            opacity={0.2}
+            stroke={edgeOuterStyle.stroke}
+            strokeWidth={edgeOuterStyle.strokeWidth}
             data-edge-id={edgeId}
-            style={{...edgeStyle}}
             />
-        </>
+            <path d={
+                `M${node1.x} ${node1.y} L${node2.x} ${node2.y}`
+            }
+            opacity={0.5}
+            data-edge-id={edgeId}
+            style={edgeInnerStyle}
+            />
+            <text
+                x={(node2.x+node1.x)/2+10}
+                y={(node2.y+node1.y)/2+10}
+                textAnchor="middle"
+                alignmentBaseline="middle"
+                fontSize="10"
+                fill="black"
+                style={{ userSelect: "none", pointerEvents: "none" }}
+            > {weight}
+            </text>
+        </g>
         
     )
 }
