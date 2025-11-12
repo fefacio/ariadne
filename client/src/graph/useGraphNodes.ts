@@ -76,7 +76,7 @@ export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<G
         }
         return response.id;
     }, 
-    [config.showLabel, config.useIdAsLabel, nodeList.length]);
+    [config.showLabel, config.useIdAsLabel]);
 
     const deleteNode = useCallback(async (nodeId: number) => {
         try {

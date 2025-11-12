@@ -272,8 +272,6 @@ public class GraphSearch {
         Map<Node, Integer> sigma = new HashMap<>();
         Map<Node, Double> distance = new HashMap<>();
         PriorityQueue<NodeDistance> pq = new PriorityQueue<>();
-        Set<Node> visited = new HashSet<>();
-        
         List<Node> nodes = graph.getNodes();
         
         for (Node node : nodes) {

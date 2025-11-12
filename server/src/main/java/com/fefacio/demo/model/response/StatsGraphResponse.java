@@ -1,7 +1,5 @@
 package com.fefacio.demo.model.response;
 
-import java.util.List;
-
 public class StatsGraphResponse {
     private Integer numberOfNodes;
     private Integer numberOfEdges;

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // [TODO] Change GraphNode to {id: number, position: Position}?
 // [CHECK] radial generation circle, clustering
 import "./SVGCanvas.css";
@@ -13,7 +12,7 @@ import useViewBoxCoordinates from "../hooks/useViewBoxCoordinates";
 
 
 // Custom Hooks
-import { useGraphNodes, type GraphNode } from "./useGraphNodes";
+import { useGraphNodes } from "./useGraphNodes";
 import { useGraphEdges } from "./useGraphEdges";
 import { FloatingMenu } from "../components/FloatingMenu";
 import { EditNodeMenu } from "./menus/EditNodeMenu";
@@ -53,7 +52,7 @@ export function SVGCanvas() {
     
     //const {currentWindowSize} = useWindowDimensions();
     const [, forceRender] = useState({});
-    const [mouseCoords,  setMouseCoords] = useState({x:0, y:0});
+    
     const [svgCoords, setSvgCoords] = useState({x:0, y:0});
     const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 500, height: 500 });
     const [isPanning, setIsPanning] = useState(false);
@@ -67,25 +66,7 @@ export function SVGCanvas() {
     const getViewBoxCoords = useViewBoxCoordinates(svgRef.current);
     
 
-    const handleMouseMove = useCallback(
-        (event: React.MouseEvent<SVGSVGElement>) => {
-            if (edgeCreation.getState() instanceof DrawingTempState) {
-                setMouseCoords({x:event.clientX, y:event.clientY});
-                setSvgCoords(getViewBoxCoords(event));
-            }
-            
-
-            if (isPanning && uiStateContext.currentMode===SvgModes.SELECT) {
-                const coords = getViewBoxCoords(event)
-                setViewBox(prev => ({
-                    ...prev,
-                    x: prev.x - (coords.x - lastPanPoint.x),
-                    y: prev.y - (coords.y - lastPanPoint.y)
-                }));
-            }
-        },
-        [isPanning, uiStateContext.currentMode, getViewBoxCoords, lastPanPoint]
-    )
+    
 
     const handleMouseDown = useCallback(
         (event: React.MouseEvent<SVGSVGElement>) => {
@@ -227,10 +208,28 @@ export function SVGCanvas() {
     }, [edgeActions, nodeActions, uiStateContext, uiStateContext.openMenuList]);
 
     // EDGE CREATION
-    const [clickedCircle, setClickedCircle] = useState<GraphNode | null>(null);
     const edgeCreation = useRef(new EdgeCreation(
         svgRef, edgeActions.add
     )).current;
+
+    const handleMouseMove = useCallback(
+        (event: React.MouseEvent<SVGSVGElement>) => {
+            if (edgeCreation.getState() instanceof DrawingTempState) {
+                setSvgCoords(getViewBoxCoords(event));
+            }
+            
+
+            if (isPanning && uiStateContext.currentMode===SvgModes.SELECT) {
+                const coords = getViewBoxCoords(event)
+                setViewBox(prev => ({
+                    ...prev,
+                    x: prev.x - (coords.x - lastPanPoint.x),
+                    y: prev.y - (coords.y - lastPanPoint.y)
+                }));
+            }
+        },
+        [edgeCreation, isPanning, uiStateContext.currentMode, getViewBoxCoords, lastPanPoint.x, lastPanPoint.y]
+    )
 
     useEffect(() => {
         edgeCreation.onEdgeComplete = edgeActions.add;
@@ -267,7 +266,6 @@ export function SVGCanvas() {
     const handleClickSVGCanvas = async (event: React.MouseEvent<SVGSVGElement>) => {
         if (!svgRef.current) return;
 
-        setMouseCoords({x:event.clientX, y:event.clientY});
         const svgCoords = getViewBoxCoords(event);
         setSvgCoords(svgCoords);
 
@@ -284,7 +282,6 @@ export function SVGCanvas() {
                 const clickedNode = nodeList.find(node => node.id === circleId);
                 if (!clickedNode) return;
 
-                setClickedCircle(clickedNode);
 
             }
         }

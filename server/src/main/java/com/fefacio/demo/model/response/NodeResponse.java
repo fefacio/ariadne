@@ -1,6 +1,5 @@
 package com.fefacio.demo.model.response;
 
-import com.fefacio.demo.model.graph.Edge;
 import com.fefacio.demo.model.graph.Node;
 
 public class NodeResponse {

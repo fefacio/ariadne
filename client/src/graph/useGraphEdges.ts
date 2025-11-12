@@ -109,7 +109,7 @@ export const useGraphEdges = () => {
             throw error;
         }
     }, 
-    [edgeList]);
+    []);
     /* MUITO CUIDADO COM PROMISE.ALL
     criou race condition de deleção no backend forçando a executar o synchronized
     e garantir que o metodo seje executado uma vez por thread

@@ -3,10 +3,7 @@ package com.fefacio.demo.service;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fefacio.demo.algorithm.GraphCentrality;
@@ -19,11 +16,9 @@ import com.fefacio.demo.model.response.StatsNodeResponse;
 
 @Service
 public class StatsService {
-    private GraphService graphService;
     private Graph graph;
 
     public StatsService(GraphService graphService){
-        this.graphService = graphService;
         this.graph = graphService.getGraph();
     }
 

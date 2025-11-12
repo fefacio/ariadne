@@ -3,9 +3,6 @@ package com.fefacio.demo.algorithm;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.fefacio.demo.model.graph.Graph;
 import com.fefacio.demo.model.graph.Node;
 

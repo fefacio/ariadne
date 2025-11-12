@@ -81,17 +81,12 @@ public class PMedianInterchange extends PMedianBase {
                 for (int i = 0; i < n; i++) {
                     double min1 = Double.POSITIVE_INFINITY;
                     double min2 = Double.POSITIVE_INFINITY;
-                    int fac1 = -1, fac2 = -1;
-                    
                     for (int j : pStar) {
                         if (d[i][j] < min1) {
                             min2 = min1;
-                            fac2 = fac1;
                             min1 = d[i][j];
-                            fac1 = j;
                         } else if (d[i][j] < min2) {
                             min2 = d[i][j];
-                            fac2 = j;
                         }
                     }
                     

@@ -1,6 +1,5 @@
 package com.fefacio.demo.model.response;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.fefacio.demo.model.graph.Node;

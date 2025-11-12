@@ -1,8 +1,5 @@
 package com.fefacio.demo.controller;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fefacio.demo.model.response.StatsGraphResponse;
 import com.fefacio.demo.model.response.StatsNodeResponse;
 import com.fefacio.demo.service.StatsService;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @CrossOrigin(origins = {"http://localhost:3000", "https://ariadne-frontend-40mk.onrender.com"})

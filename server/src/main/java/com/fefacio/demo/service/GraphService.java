@@ -14,10 +14,8 @@ import java.util.stream.DoubleStream;
 
 import org.springframework.stereotype.Service;
 
-import com.fefacio.demo.algorithm.GraphCentrality;
 import com.fefacio.demo.algorithm.GraphClustering;
 import com.fefacio.demo.algorithm.GraphSearch;
-import com.fefacio.demo.algorithm.GraphStats;
 import com.fefacio.demo.algorithm.pmedian.PMedianClustering;
 import com.fefacio.demo.algorithm.pmedian.PMedianGreedy;
 import com.fefacio.demo.algorithm.pmedian.PMedianInterchange;
@@ -34,7 +32,6 @@ import com.fefacio.demo.model.response.GraphDataResponse;
 import com.fefacio.demo.model.response.NodeResponse;
 import com.fefacio.demo.model.response.PMedianResponse;
 import com.fefacio.demo.model.response.SearchResponse;
-import com.fefacio.demo.model.response.StatsNodeResponse;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -181,7 +178,7 @@ public class GraphService {
         for (Edge edge : graph.getEdges()) {
             if (!addedEdges.contains(edge.getId())) {
                 EdgeJson edgeJson = new EdgeJson();
-                edgeJson.id = edge.getId();
+                edge.getId();
                 edgeJson.sourceId = edge.getSource().getId();
                 edgeJson.targetId = edge.getTarget().getId();
                 edgeJson.weight = edge.getWeight();
@@ -511,7 +508,6 @@ public class GraphService {
     }
     
     private static class EdgeJson {
-        public Integer id;
         public Integer sourceId;
         public Integer targetId;
         public Double weight;

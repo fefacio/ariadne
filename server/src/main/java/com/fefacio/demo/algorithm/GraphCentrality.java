@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fefacio.demo.model.graph.Edge;
 import com.fefacio.demo.model.graph.Graph;
 import com.fefacio.demo.model.graph.Node;
 

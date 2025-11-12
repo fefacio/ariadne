@@ -6,7 +6,6 @@ package com.fefacio.demo.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -31,9 +30,6 @@ import com.fefacio.demo.model.response.GraphDataResponse;
 import com.fefacio.demo.model.response.NodeResponse;
 import com.fefacio.demo.model.response.PMedianResponse;
 import com.fefacio.demo.model.response.SearchResponse;
-import com.fefacio.demo.algorithm.GraphClustering;
-import com.fefacio.demo.model.graph.Edge;
-import com.fefacio.demo.model.graph.Node;
 
 
 import org.springframework.web.bind.annotation.PostMapping;
