@@ -1,6 +1,7 @@
 import { DEFAULT_RADIUS_SIZE } from "../../constants";
-import { NodeTypes, type NodeType, type Position } from "../../types/types";
-import { FillingTypes, generateFullyConnectedEdges, generateRandomEdges, type BaseGenerationParams, type EdgeGeneration, type FillingType, type Graph, type NodeGeneration } from "./generationUtils";
+import { NodeTypes, type Position } from "../../types";
+import { FillingTypes, generateFullyConnectedEdges, type BaseGenerationParams, type EdgeGeneration, type FillingType, type Graph, type NodeGeneration } from "./generationUtils";
+import { generateRandomEdges } from "./random";
 
 
 
@@ -16,26 +17,10 @@ interface GridGenerationParams extends BaseGenerationParams {
     gridSize?: number;
     rows?: number;
     columns?: number;
+    edgeProbability: number;
+    maxAttempts: number;
 };
 
-// UTILS
-function getRandomNodeType(): NodeType {
-    const nodePercentages = {
-        "NORMAL": 0.8,
-        "CONSUMER": 0.2
-    }
-
-    const random = Math.random();
-    let cumulative = 0;
-
-    for (const [type, probability] of Object.entries(nodePercentages) as [string, number][]) {
-        cumulative += probability;
-        if (random < cumulative) {
-            return type as NodeType;
-        }
-    }
-    return NodeTypes.NORMAL;
-}
 
 function applyNoise(value: number, spacing: number, noisePercentage: number): number {
     return value + Math.random() * (noisePercentage / 100 * spacing);
@@ -178,7 +163,7 @@ function generateNeighborEdgesVH(nodes: NodeGeneration[], cols: number): EdgeGen
             const currentNode = gridMap.get(`${i},${j}`);
             if (!currentNode) continue;
 
-            // Conecta com vizinho à direita
+            // Right neighbor
             const rightNode = gridMap.get(`${i},${j + 1}`);
             if (rightNode) {
                 edges.push({
@@ -189,7 +174,7 @@ function generateNeighborEdgesVH(nodes: NodeGeneration[], cols: number): EdgeGen
                 });
             }
 
-            // Conecta com vizinho abaixo
+            // Bottom neighbor
             const bottomNode = gridMap.get(`${i + 1},${j}`);
             if (bottomNode) {
                 edges.push({
@@ -266,10 +251,10 @@ function generateNeighborEdgesVHD(nodes: NodeGeneration[], cols: number): EdgeGe
 
 
 
-function generateGridEdges(nodes: NodeGeneration[], fillingType: FillingType, cols: number): EdgeGeneration[] {
+function generateGridEdges(nodes: NodeGeneration[], fillingType: FillingType, cols: number, edgeProbability: number, maxAttempts: number): EdgeGeneration[] {
     switch (fillingType) {
         case FillingTypes.RANDOM:
-            return generateRandomEdges(nodes);
+            return generateRandomEdges(nodes, {edgeProbability, maxAttempts});
         case FillingTypes.FULLY_CONNECTED:
             return generateFullyConnectedEdges(nodes);
         case FillingTypes.NEIGHBORS_VH:
@@ -283,13 +268,10 @@ function generateGridEdges(nodes: NodeGeneration[], fillingType: FillingType, co
 
 
 export function generateGrid(params: GridGenerationParams): Graph {
-    const { fillingType } = params;
+    const { fillingType, edgeProbability, maxAttempts } = params;
 
-    // Gera as posições dos nós
     const { nodes, cols } = generateNodePositions(params);
-
-    // Gera as edges baseado no tipo de preenchimento
-    const edges = generateGridEdges(nodes, fillingType, cols);
+    const edges = generateGridEdges(nodes, fillingType, cols, edgeProbability, maxAttempts);
 
     return { nodes, edges };
 }
@@ -298,7 +280,16 @@ export function generateGridSquare(
     gridSize: number,
     params: GridGenerationParams
 ): Graph {
-    const { spacing, useNoise, noisePercentage = 50, fillingType, numberOfNodes, initialPosition } = params;
+    const { 
+        spacing, 
+        useNoise, 
+        noisePercentage = 50, 
+        fillingType, 
+        numberOfNodes, 
+        initialPosition, 
+        edgeProbability, 
+        maxAttempts 
+    } = params;
     
     const nodes = generateSquarePositions(
         gridSize,
@@ -309,7 +300,7 @@ export function generateGridSquare(
         noisePercentage
     );
 
-    const edges = generateGridEdges(nodes, fillingType, gridSize);
+    const edges = generateGridEdges(nodes, fillingType, gridSize, edgeProbability, maxAttempts);
 
     return { nodes, edges };
 }
@@ -320,7 +311,16 @@ export function generateGridRectangular(
     cols: number,
     params: GridGenerationParams
 ): Graph {
-    const { spacing, useNoise, noisePercentage = 50, fillingType, numberOfNodes, initialPosition } = params;
+    const { 
+        spacing, 
+        useNoise, 
+        noisePercentage = 50, 
+        fillingType, 
+        numberOfNodes, 
+        initialPosition, 
+        edgeProbability, 
+        maxAttempts 
+    } = params;
     
     const nodes = generateRectangularPositions(
         rows,
@@ -332,23 +332,23 @@ export function generateGridRectangular(
         noisePercentage
     );
 
-    const edges = generateGridEdges(nodes, fillingType, cols);
+    const edges = generateGridEdges(nodes, fillingType, cols, edgeProbability, maxAttempts);
 
     return { nodes, edges };
 }
 
 
-export function generateRandom(count: number, width: number, height: number): Graph {
+export function generateRandom(count: number, width: number, height: number, edgeProbability: number, maxAttempts: number): Graph {
     const nodes: NodeGeneration[] = [];
     for (let i=0; i<count; i++){
         nodes.push({
             id: i,
             x: Math.random() * width,
             y: Math.random() * height,
-            type: getRandomNodeType()
+            type: NodeTypes.NORMAL
         })
     }
-    const edges: EdgeGeneration[] = generateRandomEdges(nodes);
+    const edges: EdgeGeneration[] = generateRandomEdges(nodes, {edgeProbability, maxAttempts});
 
     return {nodes: nodes, edges: edges};
 }

@@ -15,12 +15,98 @@ public class GraphStats {
         this.graphSearch = new GraphSearch(graph);
     }
 
+    public double avgDemand() {
+        if (graph.getNodeCount() == 0) return 0.0;
+        List<Node> consumers = graph.getConsumerNodes();
+        if (consumers.isEmpty()){
+            return 0.0;
+        }
+        double sum = 0.0;
+        for (Node node : consumers) {
+            sum += node.getDemand();
+        }
+        
+        return sum / consumers.size();
+    }
+
+    public double minDegree() {
+        if (graph.getNodeCount() == 0) return 0.0;
+        
+        double min = Double.POSITIVE_INFINITY;
+        for (Node node : graph.getNodes()) {
+            double degree = graph.getDegree(node);
+            min = Math.min(min, degree);
+        }
+        
+        return min == Double.POSITIVE_INFINITY ? 0.0 : min;
+    }
+
+    public double maxDegree() {
+        if (graph.getNodeCount() == 0) return 0.0;
+        
+        double max = 0.0;
+        for (Node node : graph.getNodes()) {
+            double degree = graph.getDegree(node);
+            max = Math.max(max, degree);
+        }
+        
+        return max;
+    }
+
+    public double avgDegree() {
+        if (graph.getNodeCount() == 0) return 0.0;
+        
+        double sum = 0.0;
+        for (Node node : graph.getNodes()) {
+            sum += graph.getDegree(node);
+        }
+        
+        return Math.round(sum/graph.getNodeCount()*100.0)/100.0;
+    }
+
+    public double minStrength() {
+        if (graph.getNodeCount() == 0) return 0.0;
+        
+        double min = Double.POSITIVE_INFINITY;
+        for (Node node : graph.getNodes()) {
+            double strength = graph.getStrength(node);
+            min = Math.min(min, strength);
+        }
+        
+        return min == Double.POSITIVE_INFINITY ? 0.0 : min;
+    }
+
+    public double maxStrength() {
+        if (graph.getNodeCount() == 0) return 0.0;
+        
+        double max = 0.0;
+        for (Node node : graph.getNodes()) {
+            double strength = graph.getStrength(node);
+            max = Math.max(max, strength);
+        }
+        
+        return max;
+    }
+
+    public double avgStrength() {
+        if (graph.getNodeCount() == 0) return 0.0;
+        
+        double sum = 0.0;
+        for (Node node : graph.getNodes()) {
+            sum += graph.getStrength(node);
+        }
+        
+        return Math.round(sum/graph.getNodeCount()*100.0)/100.0;
+    }
+
+
     public double graphDensity() {
         int n = graph.getNodeCount();
         if (n <= 1) return 0.0;
         
         int maxEdges = n * (n - 1);
-        return (double) graph.getEdgeCount() / maxEdges;
+        double density = (double) graph.getEdgeCount() / maxEdges;
+        return Math.round(density*100.0)/100.0;
     }
 
     public Double nodeEccentricity(Node node){
@@ -44,7 +130,6 @@ public class GraphStats {
             }
         }
         
-        // Se nenhuma excentricidade válida foi encontrada, retorna 0
         return radius == Double.POSITIVE_INFINITY ? 0.0 : radius;
     }
 
@@ -76,7 +161,11 @@ public class GraphStats {
             }
         }
         
-        return count > 0 ? sum / count : 0.0;
+        if (count>0) {
+            return Math.round((sum/count)*100.0)/100.0;
+        } else {
+            return 0.0;
+        }
     }
 
     public double averageNodePathLength(Node node) {
@@ -92,7 +181,7 @@ public class GraphStats {
                 count++;
             }
         }
-        if (count>0){
+        if (count>0) {
             return Math.round((sum/count)*100.0)/100.0;
         } else {
             return 0.0;
@@ -122,8 +211,12 @@ public class GraphStats {
             sum += triangles / possibleTriangles;
             count++;
         }
+        if (count>0) {
+            return Math.round((sum/count)*100.0)/100.0;
+        } else {
+            return 0.0;
+        }
         
-        return count > 0 ? sum / count : 0.0;
     }
 
     public double clusteringCoefficient(Node node){

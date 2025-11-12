@@ -1,6 +1,7 @@
 import { DEFAULT_RADIUS_SIZE } from "../../constants";
-import { NodeTypes, type Position } from "../../types/types";
-import { edgeExists, FillingTypes, generateFullyConnectedEdges, generateRandomEdges, getDegree, type BaseGenerationParams, type EdgeGeneration, type FillingType, type Graph, type NodeGeneration } from "./generationUtils";
+import { NodeTypes, type Position } from "../../types";
+import { edgeExists, FillingTypes, generateFullyConnectedEdges, getDegree, type BaseGenerationParams, type EdgeGeneration, type FillingType, type Graph, type NodeGeneration } from "./generationUtils";
+import { generateRandomEdges } from "./random";
 
 
 interface RingGenerationParams extends BaseGenerationParams {
@@ -8,12 +9,14 @@ interface RingGenerationParams extends BaseGenerationParams {
     probability?: number;
     m?: number;
     m0?: number;
+    edgeProbability: number;
+    maxAttempts: number;
 }
 
 function calculateCircleRadius(numberOfNodes: number, spacing: number): number {
     // Desired circunference = numberOfNodes * spacing * constants
     // C = 2πr =>  r = C / (2π)
-    const desiredCircumference = 1.5*numberOfNodes * (2 * DEFAULT_RADIUS_SIZE + spacing);
+    const desiredCircumference = 1.3*numberOfNodes * (2 * DEFAULT_RADIUS_SIZE + spacing);
     return desiredCircumference / (2 * Math.PI);
 }
 
@@ -27,10 +30,9 @@ export function generateRingPositions(
     useNoise: boolean,
     noisePercentage: number = 50
 ): { nodes: NodeGeneration[], radius: number, center: Position } {
+
     const nodes: NodeGeneration[] = [];
     const radius = calculateCircleRadius(numberOfNodes, spacing);
-    console.log("Generating ring positions for "+numberOfNodes+" nodes");
-    // Centro do círculo (ajustado para que os nós fiquem visíveis)
     const center = {
         x: initialPosition.x + radius,
         y: initialPosition.y + radius
@@ -41,11 +43,9 @@ export function generateRingPositions(
     for (let i = 0; i < numberOfNodes; i++) {
         const angle = i * angleStep;
         
-        // Posição base no círculo
         let x = center.x + radius * Math.cos(angle);
         let y = center.y + radius * Math.sin(angle);
 
-        // Aplica ruído se necessário
         if (useNoise) {
             const noiseAmount = (noisePercentage / 100) * spacing;
             x += (Math.random() - 0.5) * noiseAmount;
@@ -67,22 +67,6 @@ export function generateRingPositions(
 // *^^^^^^^^^^^^^^^^^^^^^^^^^*                        
 // |  GENERATE EDGES         |
 // *-------------------------*
-function generateRingNeighborsEdges(nodes: NodeGeneration[]): EdgeGeneration[] {
-    // const edges: GraphEdge[] = [];
-    // const n = nodes.length;
-
-    // for (let i = 0; i < n; i++) {
-    //     const nextIndex = (i + 1) % n;
-    //     edges.push({
-    //         id: edges.length,
-    //         sourceId: nodes[i].id,
-    //         targetId: nodes[nextIndex].id,
-    //         weight: 1,
-    //     });
-    // }
-
-    return generateRingLatticeEdges(nodes, 2);
-}
 
 function generateRingLatticeEdges(nodes: NodeGeneration[], k: number): EdgeGeneration[] {
     const edges: EdgeGeneration[] = [];
@@ -108,9 +92,13 @@ function generateRingLatticeEdges(nodes: NodeGeneration[], k: number): EdgeGener
     return edges;
 }
 
+function generateRingNeighborsEdges(nodes: NodeGeneration[]): EdgeGeneration[] {
+    return generateRingLatticeEdges(nodes, 2);
+}
+
 function generateSmallWorldEdges(nodes: NodeGeneration[], k: number, rewireProb: number): EdgeGeneration[] {
-    console.log("[WATTS] with p: "+rewireProb);
     const n = nodes.length;
+
     // Odd values are always rounded up down 
     const newK = Math.floor(k / 2) * 2;
     const neighborsPerSide = newK / 2;
@@ -128,9 +116,9 @@ function generateSmallWorldEdges(nodes: NodeGeneration[], k: number, rewireProb:
                     newTarget = Math.floor(Math.random() * n);
                     attempts++;
                     
-                    // Condições para aceitar o novo target:
-                    // 1. Não é o próprio nó (evita self-loop)
-                    // 2. Edge ainda não existe (evita duplicata)
+                    // Conditions for accepting new edge:
+                    // 1. Not own node
+                    // 2. Edge doesn't exist
                     const isValid = 
                         newTarget !== i && 
                         !edgeExists(edges, nodes[i].id, nodes[newTarget].id);
@@ -229,16 +217,12 @@ function generateScaleFreeEdges(nodes: NodeGeneration[], m: number, m0: number):
             availableNodes = availableNodes.filter(id => id !== targetNodeId);
         }
         
-        console.log(`[SCALA-FREE] Node ${i} conecting to ${selectedTargets.length} nodes: [${selectedTargets.join(', ')}]`);
     }
-    
-    console.log(`[SCALE-FREE] Graph generated with ${n} nodes and ${edges.length} edges (m=${m})`);
     
     return edges;
 }
 
 function generateErdosRenyiEdges(nodes: NodeGeneration[], probability: number): EdgeGeneration[] {
-    console.log("[ERDOS] with p: "+probability);
     const edges: EdgeGeneration[] = [];
     const n = nodes.length;
     
@@ -271,14 +255,15 @@ function generateRingEdges(
     k: number = 4,
     probability: number = 0.1,
     m: number = 2,
-    m0: number = 3
+    m0: number = 3,
+    edgeProbability: number,
+    maxAttempts: number
 ): EdgeGeneration[] {
     switch (fillingType) {
         case FillingTypes.RING_NEIGHBORS:
             return generateRingNeighborsEdges(nodes);
         
         case FillingTypes.RING_LATTICE:
-            console.log("Generating ring lattice with k: "+k);
             return generateRingLatticeEdges(nodes, k);
         
         case FillingTypes.SMALL_WORLD:
@@ -294,7 +279,7 @@ function generateRingEdges(
             return generateFullyConnectedEdges(nodes);
         
         case FillingTypes.RANDOM:
-            return generateRandomEdges(nodes);
+            return generateRandomEdges(nodes, {edgeProbability, maxAttempts});
         
         default:
             return generateRingNeighborsEdges(nodes);
@@ -312,20 +297,20 @@ export function generateRing(params: RingGenerationParams): Graph {
         k = 4,
         probability = 0.1,
         m = 2,
-        m0 = 3
+        m0 = 3,
+        edgeProbability,
+        maxAttempts
     } = params;
 
     if (numberOfNodes < 3) {
         throw new Error("Circular graph needs at least 3 nodes");
     }
-    console.log("!GENERATING! Ring with k "+k+" and nodeCount "+numberOfNodes);
     if (fillingType === FillingTypes.RING_LATTICE || 
         fillingType === FillingTypes.SMALL_WORLD && 
         k!== undefined && k >= numberOfNodes
     ) {
         console.warn(`k (${k}) should be less than node count (${numberOfNodes})`);
     }
-    console.log("[PROB] prob: "+probability);
 
     const { nodes } = generateRingPositions(
         numberOfNodes,
@@ -341,7 +326,9 @@ export function generateRing(params: RingGenerationParams): Graph {
         k,
         probability,
         m,
-        m0
+        m0,
+        edgeProbability,
+        maxAttempts
     );
 
     return { nodes, edges };

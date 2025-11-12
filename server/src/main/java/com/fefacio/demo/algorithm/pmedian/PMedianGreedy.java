@@ -1,11 +1,12 @@
 package com.fefacio.demo.algorithm.pmedian;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 public class PMedianGreedy extends PMedianBase {
-    public PMedianGreedy(double[][] distances, double[] weights, int numFacilities) {
-        super(distances, weights, numFacilities);
+    public PMedianGreedy(double[][] distances, double[] weights, int numFacilities, List<Integer> consumerIds, List<Integer> candidateIds) {
+        super(distances, weights, numFacilities, consumerIds, candidateIds);
     }
     
     @Override

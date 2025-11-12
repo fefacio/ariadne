@@ -20,12 +20,7 @@ public class GraphClustering {
         this.graph = graph;
     }
 
-    /**
-     * Spectral Clustering using Laplacian Matrix
-     * @param k número de clusters desejados
-     * @param maxIterations iterações máximas para K-means
-     * @return Map<nodeId, Cluster>
-     */
+    
     public Map<Integer, Integer> spectralClustering(int k, int maxIterations, int maxTrials) {
         if (k <= 0) {
             throw new IllegalArgumentException("Number of clusters needs to be >=1");

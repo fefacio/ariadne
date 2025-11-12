@@ -1,10 +1,9 @@
 import { useState } from "react";
 import "./Menus.css";
 import { CollapsibleSection } from "../../components/CollapsibleSection";
-import type { GraphEdge, GraphNode } from "../SVGCanvas";
-import type { NodeActions } from "../useGraphNodes";
-import type { EdgeActions } from "../useGraphEdges";
-import { generateRandomEdges, randomizeNodeTypes, randomizeWeights, type RandomEdgesParams, type RandomNodeTypeParams, type RandomWeightParams } from "../generation/random";
+import type { GraphNode, NodeActions } from "../useGraphNodes";
+import type { EdgeActions, GraphEdge } from "../useGraphEdges";
+import { generateRandomEdges, randomizeNodes, randomizeWeights, type RandomEdgesParams, type RandomNodeParams, type RandomWeightParams } from "../generation/random";
 
 
 
@@ -16,9 +15,6 @@ interface RandomizerMenuProps {
 }
 
 export function RandomizerMenu({ nodeList, edgeList, nodeActions, edgeActions }: RandomizerMenuProps) {
-    // =====================================================
-    // RANDOM WEIGHT STATE
-    // =====================================================
     const [weightParams, setWeightParams] = useState<RandomWeightParams>({
         from: 1,
         to: 10,
@@ -28,24 +24,20 @@ export function RandomizerMenu({ nodeList, edgeList, nodeActions, edgeActions }:
         randomNumberOfEdges: false
     });
 
-    // =====================================================
-    // RANDOM NODE TYPE STATE
-    // =====================================================
-    const [nodeTypeParams, setNodeTypeParams] = useState<RandomNodeTypeParams>({
-        consumerProbability: 0.5
+    const [nodeParams, setNodeParams] = useState<RandomNodeParams>({
+        randomizeConsumers: true, 
+        consumerProbability: 0.5,
+        randomizeDemands: false,
+        demandFrom: 1,
+        demandTo: 10,
+        includeDecimalDemands: false
     });
 
-    // =====================================================
-    // RANDOM EDGES STATE
-    // =====================================================
     const [edgesParams, setEdgesParams] = useState<RandomEdgesParams>({
         edgeProbability: 0.3,
         maxAttempts: 100
     });
 
-    // =====================================================
-    // HANDLERS
-    // =====================================================
 
     const handleRandomizeWeights = async () => {
         if (edgeList.length === 0) {
@@ -74,43 +66,71 @@ export function RandomizerMenu({ nodeList, edgeList, nodeActions, edgeActions }:
             const uniqueEdges = edgeActions.getUnique();
             const updatedWeights = randomizeWeights(uniqueEdges, weightParams);
             
-            // Atualiza os pesos
             for (const [edgeId, newWeight] of updatedWeights) {
-                await edgeActions.updateWeight(edgeId, newWeight);
+                const [forwardId, backwardId] = edgeActions.getPair(edgeId);
+                if (!!forwardId && !!backwardId){
+                    await edgeActions.updateWeight(forwardId, newWeight);
+                    await edgeActions.updateWeight(backwardId, newWeight);
+                } else {
+                    console.error("Error while finding edge pair");
+                }
+                
             }
-            
-            console.log(`Randomized ${updatedWeights.size} edge weights`);
+
         } catch (error) {
             console.error("Error randomizing weights:", error);
             alert("Failed to randomize weights");
         }
     };
 
-    const handleRandomizeNodeTypes = async () => {
+    const handleRandomizeNodes = async () => {
         if (nodeList.length === 0) {
             alert("No nodes to randomize!");
             return;
         }
 
-        if (nodeTypeParams.consumerProbability < 0 || nodeTypeParams.consumerProbability > 1) {
+        // Validação: pelo menos uma opção deve estar ativa
+        if (!nodeParams.randomizeConsumers && !nodeParams.randomizeDemands) {
+            alert("Please select at least one option: Randomize Consumers or Randomize Demands!");
+            return;
+        }
+
+        if (nodeParams.randomizeConsumers && 
+            (nodeParams.consumerProbability < 0 || nodeParams.consumerProbability > 1)) {
             alert("Probability must be between 0 and 1!");
             return;
         }
 
+        if (nodeParams.randomizeDemands) {
+            if (nodeParams.demandFrom < 0 || nodeParams.demandTo < 0) {
+                alert("Demand values must be positive!");
+                return;
+            }
+
+            if (nodeParams.demandFrom >= nodeParams.demandTo) {
+                alert("'From' value must be less than 'To' value!");
+                return;
+            }
+        }
+
         try {
-            const updatedTypes = randomizeNodeTypes(nodeList, nodeTypeParams);
+            const { types, demands } = randomizeNodes(nodeList, nodeParams);
             
-            // Atualiza os tipos
-            for (const [nodeId, newType] of updatedTypes) {
-                await nodeActions.updateType(nodeId, newType);
+            if (types) {
+                for (const [nodeId, newType] of types) {
+                    await nodeActions.updateType(nodeId, newType);
+                }
             }
             
-            const consumerCount = Array.from(updatedTypes.values())
-                .filter(type => type === "CONSUMER").length;
-            console.log(`Randomized node types: ${consumerCount} consumers, ${nodeList.length - consumerCount} normal`);
+            if (demands) {
+                for (const [nodeId, newDemand] of demands) {
+                    await nodeActions.updateDemand(nodeId, newDemand);
+                }
+            }
+
         } catch (error) {
-            console.error("Error randomizing node types:", error);
-            alert("Failed to randomize node types");
+            console.error("Error randomizing nodes:", error);
+            alert("Failed to randomize nodes");
         }
     };
 
@@ -126,22 +146,18 @@ export function RandomizerMenu({ nodeList, edgeList, nodeActions, edgeActions }:
         }
 
         try {
-            // Deleta todas as arestas existentes
+            // Deleta all edges
             const uniqueEdges = edgeActions.getUnique();
             for (const edge of uniqueEdges) {
                 await edgeActions.delete(edge.sourceId, edge.targetId);
             }
 
-            // Gera novas arestas (tenta até conseguir um grafo conexo)
+    
             const newEdges = generateRandomEdges(nodeList, edgesParams);
-            console.log("EDGELIST INSIDE HERE");
-            console.log(edgeList);
-            // Adiciona as novas arestas
             for (const edge of newEdges) {
                 await edgeActions.add(edge.sourceId, edge.targetId, 1);
             }
             
-            console.log(`Generated ${newEdges.length} random edges (connected graph)`);
         } catch (error) {
             console.error("Error generating random edges:", error);
             if (error instanceof Error) {
@@ -154,9 +170,6 @@ export function RandomizerMenu({ nodeList, edgeList, nodeActions, edgeActions }:
 
     return (
         <div className="menu-content">
-            {/* =====================================================
-                RANDOM WEIGHT SECTION
-            ===================================================== */}
             <div className="params">
                 <CollapsibleSection title="RANDOM WEIGHT">
                     <div className="params-group">
@@ -235,7 +248,7 @@ export function RandomizerMenu({ nodeList, edgeList, nodeActions, edgeActions }:
                                                 numberOfEdges: Math.min(+e.target.value, edgeList.length) 
                                             })}
                                         />
-                                        <span className="hint">Max: {edgeList.length}</span>
+                                        <span className="hint">Max: {edgeList.length/2}</span>
                                     </>
                                 )}
                             </>
@@ -246,36 +259,110 @@ export function RandomizerMenu({ nodeList, edgeList, nodeActions, edgeActions }:
                     </div>
                 </CollapsibleSection>
 
-                {/* =====================================================
-                    RANDOM NODE TYPE SECTION
-                ===================================================== */}
-                <CollapsibleSection title="RANDOM NODE TYPE">
+                <CollapsibleSection title="RANDOM NODES">
                     <div className="params-group">
-                        <label htmlFor="consumerProb">Consumer Probability:</label>
+                        <label htmlFor="randomizeConsumers">Randomize Consumers:</label>
                         <input
-                            id="consumerProb"
-                            type="number"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={nodeTypeParams.consumerProbability}
-                            onChange={(e) => setNodeTypeParams({ 
-                                consumerProbability: Math.max(0, Math.min(1, +e.target.value)) 
+                            id="randomizeConsumers"
+                            type="checkbox"
+                            checked={nodeParams.randomizeConsumers}
+                            onChange={(e) => setNodeParams({ 
+                                ...nodeParams, 
+                                randomizeConsumers: e.target.checked 
                             })}
                         />
-                        <span className="full-width-text">
-                            {(nodeTypeParams.consumerProbability * 100).toFixed(0)}%
-                        </span>
+
+                        {nodeParams.randomizeConsumers && (
+                            <>
+                                <label htmlFor="consumerProb">Consumer Probability:</label>
+                                <input
+                                    id="consumerProb"
+                                    type="number"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value={nodeParams.consumerProbability}
+                                    onChange={(e) => setNodeParams({ 
+                                        ...nodeParams,
+                                        consumerProbability: Math.max(0, Math.min(1, +e.target.value)) 
+                                    })}
+                                />
+                                <span className="full-width-text">
+                                    {(nodeParams.consumerProbability * 100).toFixed(0)}%
+                                </span>
+                            </>
+                        )}
+
+                        <label htmlFor="randomizeDemands">Randomize Demands:</label>
+                        <input
+                            id="randomizeDemands"
+                            type="checkbox"
+                            checked={nodeParams.randomizeDemands}
+                            onChange={(e) => setNodeParams({ 
+                                ...nodeParams, 
+                                randomizeDemands: e.target.checked 
+                            })}
+                        />
+
+                        {nodeParams.randomizeDemands && (
+                            <>
+                                <label htmlFor="demandFrom">Demand From:</label>
+                                <input
+                                    id="demandFrom"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step={nodeParams.includeDecimalDemands ? "0.1" : "1"}
+                                    value={nodeParams.demandFrom}
+                                    onChange={(e) => {
+                                        const value = +e.target.value;
+                                        setNodeParams({ 
+                                            ...nodeParams, 
+                                            demandFrom: Math.min(100, Math.max(0, value))
+                                        });
+                                    }}
+                                />
+
+                                <label htmlFor="demandTo">Demand To:</label>
+                                <input
+                                    id="demandTo"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step={nodeParams.includeDecimalDemands ? "0.1" : "1"}
+                                    value={nodeParams.demandTo}
+                                    onChange={(e) => {
+                                        const value = +e.target.value;
+                                        setNodeParams({ 
+                                            ...nodeParams, 
+                                            demandTo: Math.min(100, Math.max(0, value))
+                                        });
+                                    }}
+                                />
+
+                                <label htmlFor="includeDecimalDemands">Include Decimal Demands:</label>
+                                <input
+                                    id="includeDecimalDemands"
+                                    type="checkbox"
+                                    checked={nodeParams.includeDecimalDemands}
+                                    onChange={(e) => setNodeParams({ 
+                                        ...nodeParams, 
+                                        includeDecimalDemands: e.target.checked 
+                                    })}
+                                />
+                                <span className="full-width-text hint">
+                                    Only for CONSUMER nodes
+                                </span>
+                            </>
+                        )}
                     </div>
                     <div className="menu-button">
-                        <button onClick={handleRandomizeNodeTypes}>Randomize Node Types</button>
+                        <button onClick={handleRandomizeNodes}>Randomize Nodes</button>
                     </div>
                 </CollapsibleSection>
 
-                {/* =====================================================
-                    RANDOM EDGES SECTION
-                ===================================================== */}
-                <CollapsibleSection title="RANDOM EDGES (CONNECTED GRAPH)">
+            
+                <CollapsibleSection title="RANDOM EDGES">
                     <div className="params-group">
                         <label htmlFor="edgeProb">Edge Probability:</label>
                         <input
@@ -312,6 +399,8 @@ export function RandomizerMenu({ nodeList, edgeList, nodeActions, edgeActions }:
                         <button onClick={handleRandomizeEdges}>Generate Random Edges</button>
                     </div>
                 </CollapsibleSection>
+
+    
             </div>
         </div>
     );

@@ -1,27 +1,29 @@
 import { useState } from "react";
 import { graphAPI } from "../graphAPI";
 import type { NodeActions } from "../useGraphNodes";
+import { resetClusterColors } from "../../colors";
 
 
 interface ClusterMenuProps {
     nodeActions: NodeActions;
+    setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-export function ClusterMenu({nodeActions}: ClusterMenuProps) {
+export function ClusterMenu({nodeActions, setErrorMessage}: ClusterMenuProps) {
     const [clusterParams, setClusterParams] = useState({
         k: 2,
         maxIterations: 10000,
         maxTrials: 10
     });
-    //const sessionContext = useSession();
-    //const uiStateContext = useUIState();
     
-
     const handleClusterGraph = async () => {
-       try {
+        if (clusterParams.k>=nodeActions.getNodes().length){
+            setErrorMessage(`Number of clusters must not be greater or equal than the number of nodes`);
+            return;
+        }
+        try {
             const response = await graphAPI.clusterGraph(clusterParams);
             
-            console.log('Cluster result:', response);
             if (response.success) {
                 console.log(`Clusters: ${response.clusters}`);
                 nodeActions.updateClusters(response.clusters);
@@ -33,6 +35,7 @@ export function ClusterMenu({nodeActions}: ClusterMenuProps) {
     };
 
     const handleResetClusters = () => {
+        resetClusterColors();
         nodeActions.resetClusters();
     };
     
@@ -46,6 +49,9 @@ export function ClusterMenu({nodeActions}: ClusterMenuProps) {
                     value={clusterParams.k} 
                     onChange={(e) => setClusterParams({ ...clusterParams, k: +e.target.value })}
                 />
+                <span className="full-width-text">
+                    Max: {nodeActions.getNodes().length-1}
+                </span>
 
                 <label htmlFor="maxIterations">Max K-Means Iterations: </label>
                 <input

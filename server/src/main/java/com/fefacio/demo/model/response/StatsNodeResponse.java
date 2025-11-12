@@ -4,14 +4,14 @@ import java.util.List;
 
 public class StatsNodeResponse {
     private Integer id;
-    private String label;
     private String type;
 
     private Double degree;
     private Double normalizedDegree;
+    private Double strength;
+    private Double normalizedStrength;
     private List<Integer> neighborIds;
 
-    
     private Double betweennessCentrality;
     private Double closenessCentrality;
 
@@ -23,9 +23,6 @@ public class StatsNodeResponse {
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     
-    public String getLabel() { return label; }
-    public void setLabel(String label) { this.label = label; }
-    
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
     
@@ -35,6 +32,12 @@ public class StatsNodeResponse {
 
     public Double getNormalizedDegree() { return normalizedDegree; }
     public void setNormalizedDegree(Double normalizedDegree) { this.normalizedDegree = normalizedDegree; }
+
+    public Double getStrength() { return strength; }
+    public void setStrength(Double strength) { this.strength = strength; }
+
+    public Double getNormalizedStrength() { return normalizedStrength; }
+    public void setNormalizedStrength(Double normalizedStrength) { this.normalizedStrength = normalizedStrength; }
 
     public List<Integer> getNeighborIds() { return neighborIds; }
     public void setNeighborIds(List<Integer> neighborIds) { this.neighborIds = neighborIds; }

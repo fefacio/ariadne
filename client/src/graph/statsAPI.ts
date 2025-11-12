@@ -9,6 +9,8 @@ export interface NodeStatsResponse {
     type: string;
     degree: number;
     normalizedDegree: number;
+    strength: number;
+    normalizedStrength: number;
     neighborIds: number[];
     betweennessCentrality: number;
     closenessCentrality: number;
@@ -16,6 +18,29 @@ export interface NodeStatsResponse {
     clusteringCoefficient: number;
     eccentricity: number;
 }
+
+export interface GraphStatsResponse {
+    numberOfNodes: number;
+    numberOfEdges: number;
+    numberOfConsumers: number;
+    numberOfCandidates: number;
+    avgDemand: number;
+    minDegree: number;
+    maxDegree: number;
+    avgDegree: number;
+    minStrength: number;
+    maxStrength: number;
+    avgStrength: number;
+    density: number;
+    radius: number;
+    diamater: number;
+    avgClusteringCoefficient: number;
+    avgPathLength: number;
+    avgDegreeCentrality: number;
+    avgStrengthCentrality: number;
+    avgClosenessCentrality: number;
+    avgBetweennessCentrality: number;
+};
 
 class StatsAPIClient {
     private baseUrl: string;
@@ -34,7 +59,7 @@ class StatsAPIClient {
         returnBlob: boolean = false
     ): Promise<T> {
         const url = `${this.baseUrl}${endpoint}`;
-        console.log("URL: " + url);
+        console.log(`${options.method} ${url} ${options.body ? `with ${options.body}` : ""}`);  
 
         try {
             const response = await fetch(url, {

@@ -79,7 +79,6 @@ abstract class EdgeCreationState {
 export class IdleState extends EdgeCreationState {
     async clickCircle(node: SVGCircleElement): Promise<void> {
         const nodeId: number = Number(node.getAttribute("data-node-id"));
-        console.log("ALL THE GOOD TIMES"+nodeId);
         const position = {
             x: node.cx.baseVal.value,
             y: node.cy.baseVal.value
@@ -98,6 +97,11 @@ export class IdleState extends EdgeCreationState {
 export class DrawingTempState extends EdgeCreationState {
     async clickCircle(node: SVGCircleElement): Promise<void> {
         const nodeId: number = Number(node.getAttribute("data-node-id"));
+
+        if (nodeId === this.context.getSourceNodeId()) {
+            throw new Error("Cannot connect a node to itself");
+        }
+        
         const position = {
             x: node.cx.baseVal.value,
             y: node.cy.baseVal.value

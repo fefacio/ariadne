@@ -29,8 +29,9 @@ export function EditEdgeMenu({edgeId, edgeActions}: EditEdgeMenuProps) {
                     min="1"
                     value={edgeParams.weight} 
                     onChange={(e) => {
-                        setEdgeParams({ ...edgeParams, weight: +e.target.value });
-                        edgeActions.updateWeight(edgeId, +e.target.value);
+                        const newWeight = +e.target.value <= 0 ? 1 : +e.target.value
+                        setEdgeParams({ ...edgeParams, weight: newWeight });
+                        edgeActions.updateWeight(edgeId, newWeight);
                     }}
                 />
             

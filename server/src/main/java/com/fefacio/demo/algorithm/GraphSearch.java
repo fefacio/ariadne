@@ -6,6 +6,7 @@ import com.fefacio.demo.model.response.SearchResponse;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeMap;
 
 import com.fefacio.demo.model.graph.Edge;
 
@@ -291,12 +293,9 @@ public class GraphSearch {
             Node v = current.node;
             double vDist = current.distance;
             
-            // Se já visitado com distância menor, skip
             if (vDist > distance.get(v)) continue;
             
             stack.add(v);
-            
-            // Explorar vizinhos
             List<Edge> edges = graph.getEdges(v);
             if (edges == null) continue;
             
@@ -305,7 +304,6 @@ public class GraphSearch {
                 double weight = edge.getWeight();
                 double altDist = distance.get(v) + weight;
                 
-                // Caminho mais curto encontrado
                 if (altDist < distance.get(w)) {
                     distance.put(w, altDist);
                     predecessors.put(w, new ArrayList<>());
@@ -313,7 +311,6 @@ public class GraphSearch {
                     sigma.put(w, sigma.get(v));
                     pq.add(new NodeDistance(w, altDist));
                     
-                // Caminho alternativo com mesma distância
                 } else if (Math.abs(altDist - distance.get(w)) < 1e-9) {
                     predecessors.get(w).add(v);
                     sigma.put(w, sigma.get(w) + sigma.get(v));
@@ -330,7 +327,7 @@ public class GraphSearch {
     }
 
     public Map<Node, Double> getDistancesDijkstra(Node sourceNode) {
-        Map<Node, Double> distances = new HashMap<>();
+        Map<Node, Double> distances = new TreeMap<>(Comparator.comparing(Node::getId));
         PriorityQueue<NodeDistance> pq = new PriorityQueue<>();
         Set<Node> visited = new HashSet<>();
         
@@ -413,9 +410,7 @@ public class GraphSearch {
     
     
     
-    /**
-     * Classe auxiliar para Dijkstra/A* com PriorityQueue
-     */
+    
     private static class NodeDistance implements Comparable<NodeDistance> {
         Node node;
         double distance;

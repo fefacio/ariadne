@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState, type PropsWithChildren } from "react";
-import { type MenuType } from "../../types/types";
+import { SvgModes, type MenuType, type SvgMode } from "../../types";
 import type { UIStateContextType } from "./UIStateContextType";
 import { UIStateContext } from "./UIStateContext";
 
@@ -17,11 +17,17 @@ export interface OpenMenu {
 
 
 export const UIStateProvider: React.FC<PropsWithChildren> = (props) => {
-    //const [currentMode, setCurrentMode] = useState<Mode>(Modes.SELECT);
+    const [currentMode, setCurrentMode] = useState<SvgMode>(SvgModes.SELECT);
     const [openMenuList, setOpenMenuList] = useState<OpenMenu[]>([]);
     const [selectingNodeFor, setSelectingNodeFor] = useState<"source" | "target" | "stats" | null>(null);
     const menuId = useRef<number>(0);
 
+    const setMode = useCallback(
+        (mode: SvgMode) => {
+            setCurrentMode(mode);
+        },
+        []
+    );
 
     const addMenu = useCallback(
         (menu: MenuType, metadata?: OpenMenu["metadata"]) => {
@@ -72,7 +78,9 @@ export const UIStateProvider: React.FC<PropsWithChildren> = (props) => {
     }, [openMenuList]);
     
     const uiStateContext: UIStateContextType = useMemo(() => ({
-        openMenuList, 
+        currentMode,
+        openMenuList,
+        setMode, 
         addMenu, 
         deleteMenu,
         clearMenus,
@@ -80,7 +88,7 @@ export const UIStateProvider: React.FC<PropsWithChildren> = (props) => {
         getMenuMetadata,
         selectingNodeFor,
         setSelectingNodeFor
-    }), [openMenuList, addMenu, deleteMenu, clearMenus, isMenuOpen, getMenuMetadata, selectingNodeFor, setSelectingNodeFor]);
+    }), [currentMode, openMenuList, setMode, addMenu, deleteMenu, clearMenus, isMenuOpen, getMenuMetadata, selectingNodeFor]);
 
     return (
         <UIStateContext.Provider value={uiStateContext}>

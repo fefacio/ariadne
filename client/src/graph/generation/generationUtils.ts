@@ -1,4 +1,4 @@
-import type { NodeType, Position } from "../../types/types";
+import type { NodeType, Position } from "../../types";
 
 export interface NodeGeneration {
     id: number; 
@@ -44,26 +44,6 @@ export interface BaseGenerationParams {
     fillingType: FillingType;
     numberOfNodes: number;
     initialPosition: Position;
-}
-
-export function generateRandomEdges(nodes: NodeGeneration[]): EdgeGeneration[] {
-    const edges: EdgeGeneration[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
-
-        let targetIndex: number;
-        do {
-            targetIndex = Math.floor(Math.random() * nodes.length);
-        } while (targetIndex === i);
-
-        edges.push({
-            id: edges.length,
-            sourceId: node.id,
-            targetId: nodes[targetIndex].id,
-            weight: 1, 
-        });
-    }
-    return edges;
 }
 
 export function generateFullyConnectedEdges(nodes: NodeGeneration[]): EdgeGeneration[] {

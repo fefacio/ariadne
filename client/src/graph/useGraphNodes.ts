@@ -1,51 +1,82 @@
-import { useCallback, useState } from "react"
-import type { GraphEdge, GraphNode } from "./SVGCanvas";
-import { type NodeType, type Position } from "../types/types";
+import { useCallback, useEffect, useRef, useState } from "react"
+import { type NodeType, type Position } from "../types";
 import { graphAPI } from "./graphAPI";
 import { NODE_STYLES, type NodeStyle } from "../styles";
+import type { GraphEdge } from "./useGraphEdges";
+import { useGlobalConfig } from "../context/globalConfig/useGlobalConfig";
+
+
+export interface GraphNode  {
+    id: number;
+    x: number;
+    y: number;
+    type: NodeType;
+    demand: number | null;
+    style: NodeStyle;
+    label?: string;
+    clusterId?: number;
+};
+
 
 export interface NodeActions {
     add: (x: number, y: number, type: NodeType, demand: number | null) => Promise<number>; 
     delete: (id: number) => Promise<void>;
     updatePosition: (id: number, newPosition: Position) => void;
-    updateType: (id: number, type: NodeType) => Promise<void>;
+    updateType: (id: number, newType: NodeType) => Promise<void>;
+    updateDemand: (id: number, newDemand: number | null) => Promise<void>;
+    updateLabel: (id: number, label: string) => void;
+    updateLabels: () => void;
     updateCluster: (nodeId: number, clusterId: number) => void;
     updateClusters: (clusters: Record<string, number>) => void;
+    updateClustersWithFacilities: (assignments: Record<string, number>, facilities: number[]) => void;
     resetClusters: () => void;
     getById:  (id: number) => GraphNode | undefined;
     getNodes: () => GraphNode[];
+    setNodes: (nodes: GraphNode[]) => void;
     updateStyle: (id: number, style: NodeStyle) => void;
     resetStyle: (id: number) => void;
     resetStyles: () => void;
+    isEmpty: () => boolean;
 };
 
 export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<GraphEdge[]>>) => {
     const [nodeList, setNodeList] = useState<GraphNode[]>([]);
+    const nodeListRef = useRef<GraphNode[]>([]);
+    const config = useGlobalConfig();
+
+    useEffect(() => {
+        nodeListRef.current = nodeList;
+    }, [nodeList]);
 
     const addNode = useCallback(async (x: number, y: number, type: NodeType, demand: number | null) => {
-        let newNodeId: number = 0;
-        console.log("HELLO C");
-        console.log(demand);
-        console.log("NODE LIST INSIDE ADDNODE: ");
-        console.log(nodeList);
+        let response = null;
         try {
-            newNodeId = await graphAPI.createNode({type: type, demand: demand});
+            response = await graphAPI.createNode({type: type, demand: demand});
+            let label = "";
+            if (config.showLabel) {
+                label = config.useIdAsLabel 
+                    ? `${response.id}` 
+                    : `${nodeListRef.current.length + 1}`;  // Próximo número na sequência
+            }
+    
             const newNode: GraphNode = {
-                id: newNodeId,
+                id: response.id,
                 x: x,
                 y: y,
-                type: type,
-                demand: demand,
-                style: NODE_STYLES.DEFAULT
+                type: response.type as NodeType,
+                demand: response.demand,
+                style: NODE_STYLES.DEFAULT,
+                label: label,
             }
             setNodeList(prev => [...prev, newNode]);
+
         } catch (error) {
             console.error("[ERROR] WHILE CREATING NODE: "+error);
             throw error;
         }
-        return newNodeId;
+        return response.id;
     }, 
-    []);
+    [config.showLabel, config.useIdAsLabel, nodeList.length]);
 
     const deleteNode = useCallback(async (nodeId: number) => {
         try {
@@ -61,7 +92,6 @@ export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<G
     }, [setEdgeList]);
 
     const updateNodePosition = useCallback((id: number, newPosition: Position) => {
-        console.log("newPosition:"+newPosition.x)
         setNodeList(prev =>
             prev.map(node =>
                 node.id === id ? { ...node, x: newPosition.x, y: newPosition.y } : node
@@ -71,24 +101,61 @@ export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<G
 
     const updateNodeType = useCallback(async (id: number, newType: NodeType) => {
         try {
-            await graphAPI.updateNode(id, {type: newType});
-            console.log("NewType:"+newType);
+            const response = await graphAPI.updateNode(id, {type: newType});
             setNodeList(prev => {
-                const updatedList = prev.map(node =>
-                    node.id === id ? { ...node, type: newType } : node
-                );
-                for (const node of updatedList) {
-                    console.log("node-id: " + node.id + " type: " + node.type);
-                }
+                const updatedList = prev.map(node => {
+                    if (node.id === id) {
+                        const newDemand = newType !== 'CONSUMER' ? null : 1.0;
+                        return { ...node, type: response.type as NodeType, demand: newDemand };
+                    }
+                    return node;
+                });
                 return updatedList;
             });
         } catch(error) {
-            console.error("[ERROR] WHILE CREATING NODE: "+error);
+            console.error("[ERROR] WHILE UPDATING NODE TYPE: "+error);
             throw error;
         }
        
     }, 
     []);
+
+
+    const updateNodeDemand = useCallback(async (id: number, newDemand: number | null) => {
+        try {
+            const response = await graphAPI.updateNode(id, {demand: newDemand});
+            setNodeList(prev => 
+                prev.map(node =>
+                    node.id === id ? { ...node, demand: response.demand } : node
+                )
+            );
+        } catch(error) {
+            console.error("[ERROR] WHILE UPDATING NODE DEMAND: "+error);
+            throw error;
+        }
+    }, []);
+
+    const updateNodeLabel = useCallback((nodeId: number, label: string) => {
+        setNodeList(prev => 
+            prev.map(node => 
+                node.id === nodeId 
+                    ? { ...node, label } 
+                    : node
+            )
+        );
+    }, 
+    []);
+
+    const updateAllLabels = useCallback(() => {
+        setNodeList(prev => 
+            prev.map((node, index) => ({
+                ...node,
+                label: config.showLabel
+                    ? (config.useIdAsLabel ? `${node.id}` : `${index + 1}`)
+                    : ""
+            }))
+        );
+    }, [config.showLabel, config.useIdAsLabel]);
 
     const updateClusterId = useCallback((nodeId: number, clusterId: number) => {
         setNodeList(prev => 
@@ -113,6 +180,23 @@ export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<G
     }, 
     []);
 
+    const updateAllClustersWithFacilities = useCallback((assignments: Record<string, number>, facilities: number[]) => {
+        setNodeList(prev => 
+            prev.map(node => {
+                if (facilities.includes(node.id)) {
+                    return { ...node, clusterId: node.id };
+                }
+                
+                const facilityId = assignments[node.id.toString()];
+                if (facilityId !== undefined) {
+                    return { ...node, clusterId: facilityId };
+                }
+                
+                return node;
+            })
+        );
+    }, []);
+
     const resetAllClusters = useCallback(() => {
         setNodeList(prev => 
             prev.map(node => ({ ...node, clusterId: undefined }))
@@ -130,9 +214,12 @@ export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<G
     }, [nodeList]);
 
     const getAllNodes = useCallback(() => {
-        return nodeList;
+        return nodeListRef.current;  
+    }, []);
 
-    }, [nodeList]);
+    const setAllNodes = useCallback((nodes: GraphNode[]) => {
+        setNodeList(nodes);
+    }, []);
 
     const updateNodeStyle = useCallback((nodeId: number, style: NodeStyle) => {
         setNodeList(prev => 
@@ -160,6 +247,10 @@ export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<G
         );
     }, []);
 
+    const isNodeListEmpty = useCallback(() => {
+        return nodeListRef.current.length == 0;
+    }, [])
+
 
 
     const nodeActions: NodeActions = {
@@ -167,14 +258,20 @@ export const useGraphNodes = (setEdgeList: React.Dispatch<React.SetStateAction<G
         delete: deleteNode,
         updatePosition: updateNodePosition,
         updateType: updateNodeType,
+        updateDemand: updateNodeDemand,
+        updateLabel: updateNodeLabel,
+        updateLabels: updateAllLabels,
         updateCluster: updateClusterId,
         updateClusters: updateAllClusters,
+        updateClustersWithFacilities: updateAllClustersWithFacilities,
         resetClusters: resetAllClusters,
         getById: getNodeById,
         getNodes: getAllNodes,
+        setNodes: setAllNodes,
         updateStyle: updateNodeStyle,
         resetStyle: resetNodeStyle,
-        resetStyles: resetAllStyles
+        resetStyles: resetAllStyles,
+        isEmpty: isNodeListEmpty
     }
 
     return {nodeList, setNodeList, nodeActions};

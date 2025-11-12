@@ -1,7 +1,6 @@
-import { MenuTypes, Modes } from '../types/types';
+import { SvgActions, SvgModes } from '../types';
 import './Toolbox.css';
 import { ToolboxButton } from './ToolboxButton';
-
 
 // Icons
 import selectIcon from "../assets/selectIcon.svg";
@@ -13,48 +12,76 @@ import editIcon from "../assets/editIcon.svg"
 import resetIcon from "../assets/resetIcon.svg"
 import configIcon from "../assets/configIcon.svg";
 
-
-import { useSession } from '../context/session/useSession';
-import { useUIState } from '../context/uiState/useUIState';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-
+import { useGlobalConfig } from '../context/globalConfig/useGlobalConfig';
+import type { KeyboardAction } from '../types';
 
 export function Toolbox(){
-    const sessionContext = useSession();
-    const uiState = useUIState();
-
-    useKeyboardShortcuts({
-        's': () => sessionContext.setMode(Modes.SELECT),
-        'n': () => sessionContext.setMode(Modes.ADD_NODE),
-        'e': () => sessionContext.setMode(Modes.ADD_EDGE),
-        'd': () => sessionContext.setMode(Modes.DELETE),
-        'm': () => sessionContext.setMode(Modes.EDIT),
-        'r': () => {
-            uiState.addMenu(MenuTypes.MENU_RESET);
-            sessionContext.setMode(Modes.RESET);
-        },
-        'ctrl+x': () => {
-            const deleteResponse = window.confirm("Do you want to delete the graph?");
-            if (deleteResponse) {
-                uiState.clearMenus();
-                sessionContext.clearSession();
-            } 
-        },
-        'ctrl+m': () => {
-            uiState.clearMenus();
-        }
-    });
+    const config = useGlobalConfig();
+    
+    useKeyboardShortcuts();
+    const getShortcutLabel = (action: KeyboardAction): string => {
+        const shortcut = config.getShortcutByAction(action);
+        if (!shortcut) return "";
+        
+        const parts = [];
+        if (shortcut.ctrlKey) parts.push("Ctrl");
+        if (shortcut.altKey) parts.push("Alt");
+        if (shortcut.shiftKey) parts.push("Shift");
+        parts.push(shortcut.key.toUpperCase());
+        return parts.join("+");
+    };
     
     return (
         <div className="toolbox">
-            <ToolboxButton iconSrc={selectIcon} altName={"Select"} mode={Modes.SELECT} hotkey='s'/>
-            <ToolboxButton iconSrc={addNodeIcon} altName={"Add Node"} mode={Modes.ADD_NODE} hotkey='n'/>
-            <ToolboxButton iconSrc={addEdgeIcon} altName={"Add Edge"} mode={Modes.ADD_EDGE} hotkey='e'/>
-            <ToolboxButton iconSrc={deleteIcon} altName={"Delete"} mode={Modes.DELETE} hotkey='d'/>
-            <ToolboxButton iconSrc={editIcon} altName={"Edit"} mode={Modes.EDIT} hotkey='m'/>
-            <ToolboxButton iconSrc={resetIcon} altName={"Reset"} mode={Modes.RESET} hotkey='r'/>
-            <ToolboxButton iconSrc={deleteGraphIcon} altName={"Delete Graph"} mode={Modes.DELETE_GRAPH} hotkey="ctrl+x"/>
-            <ToolboxButton iconSrc={configIcon} altName={"Configuration"} mode={Modes.DELETE_GRAPH} hotkey="ctrl+c"/>
+            <ToolboxButton 
+                iconSrc={selectIcon} 
+                altName={"Select"} 
+                interaction={SvgModes.SELECT} 
+                hotkey={getShortcutLabel(SvgModes.SELECT)}
+            />
+            <ToolboxButton 
+                iconSrc={addNodeIcon} 
+                altName={"Add Node"} 
+                interaction={SvgModes.ADD_NODE} 
+                hotkey={getShortcutLabel(SvgModes.ADD_NODE)}
+            />
+            <ToolboxButton 
+                iconSrc={addEdgeIcon} 
+                altName={"Add Edge"} 
+                interaction={SvgModes.ADD_EDGE} 
+                hotkey={getShortcutLabel(SvgModes.ADD_EDGE)}
+            />
+            <ToolboxButton 
+                iconSrc={deleteIcon} 
+                altName={"Delete"} 
+                interaction={SvgModes.DELETE} 
+                hotkey={getShortcutLabel(SvgModes.DELETE)}
+            />
+            <ToolboxButton 
+                iconSrc={editIcon} 
+                altName={"Edit"} 
+                interaction={SvgModes.EDIT} 
+                hotkey={getShortcutLabel(SvgModes.EDIT)}
+            />
+            <ToolboxButton 
+                iconSrc={resetIcon} 
+                altName={"Reset"} 
+                interaction={SvgActions.RESET} 
+                hotkey={getShortcutLabel(SvgActions.RESET)}
+            />
+            <ToolboxButton 
+                iconSrc={deleteGraphIcon} 
+                altName={"Delete Graph"} 
+                interaction={SvgActions.DELETE_GRAPH} 
+                hotkey={getShortcutLabel(SvgActions.DELETE_GRAPH)}
+            />
+            <ToolboxButton 
+                iconSrc={configIcon} 
+                altName={"Configuration"} 
+                interaction={SvgActions.CONFIG}
+                hotkey={getShortcutLabel(SvgActions.CONFIG)}
+            />
         </div>
     )
 }

@@ -9,7 +9,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,17 +54,17 @@ public class GraphController {
 
     // NODE
     @GetMapping("/node/{nodeId}")
-    public Node getNode(@PathVariable Integer nodeId) {
+    public NodeResponse getNode(@PathVariable Integer nodeId) {
         return graphService.getNode(nodeId);
     }
     
     @PostMapping("/node")
-    public Integer createNode(@RequestBody NodeRequest nodeRequest) {
+    public NodeResponse createNode(@RequestBody NodeRequest nodeRequest) {
         return graphService.addNode(nodeRequest);
     }
 
     @PutMapping("/node/{nodeId}")
-    public Node putNode(@PathVariable Integer nodeId, @RequestBody NodeRequest nodeRequest) {
+    public NodeResponse putNode(@PathVariable Integer nodeId, @RequestBody NodeRequest nodeRequest) {
         return graphService.updateNode(nodeId, nodeRequest);
     }
 
@@ -78,28 +80,17 @@ public class GraphController {
 
     // EDGE
     @GetMapping("/edge/{edgeId}")
-    public Edge getEdge(@PathVariable Integer edgeId) {
+    public EdgeResponse getEdge(@PathVariable Integer edgeId) {
         return graphService.getEdge(edgeId);
     }
 
     @PostMapping("/edge") 
     public ResponseEntity<List<EdgeResponse>> createEdge(@RequestBody EdgeRequest edgeRequest) {
-        List<Edge> createdEdges = graphService.addEdge(edgeRequest);
-        
-        List<EdgeResponse> response = createdEdges.stream()
-            .map(edge -> new EdgeResponse(
-                edge.getId(),
-                edge.getSource().getId(), 
-                edge.getTarget().getId(),  
-                edge.getWeight()
-            ))
-            .collect(Collectors.toList());
-        
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(graphService.addEdge(edgeRequest));
     }
 
     @PutMapping("/edge/{edgeId}")
-    public Edge putEdge(@PathVariable Integer edgeId, @RequestBody EdgeRequest edgeRequest) {
+    public EdgeResponse putEdge(@PathVariable Integer edgeId, @RequestBody EdgeRequest edgeRequest) {
         return graphService.updateEdge(edgeId, edgeRequest);
     }
 
@@ -124,13 +115,7 @@ public class GraphController {
         graphService.clearGraph();
     }
 
-    /**
-     * Import Graph from JSON String
-     * POST /graph/import/json
-     * Body: String .json
-     * Query params: 
-     *   - clearExisting (default: true)
-     */
+
     @PostMapping("/import/json")
     public ResponseEntity<Map<String, Object>> importJson(
             @RequestBody String jsonContent,
@@ -159,13 +144,7 @@ public class GraphController {
         }
     }
 
-    /**
-     * Search path from source to node
-     * POST /graph/algorithm/search
-     * Body: String .json
-     * Query params: 
-     *   - clearExisting (default: true)
-     */
+
     @PostMapping("/algorithm/search")
     public ResponseEntity<?> search(@RequestBody SearchRequest request) {
         try {
@@ -196,6 +175,23 @@ public class GraphController {
         }
     }
 
+    @GetMapping("/algorithm/search/distance-matrix")
+    public ResponseEntity<byte[]> getDistanceMatrix() {
+        try {
+            byte[] csvBytes = graphService.getDistanceMatrix();
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("text/csv"));
+            headers.setContentDispositionFormData("attachment", "nodes_distance.csv");
+            headers.setContentLength(csvBytes.length);
+            
+            return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @PostMapping("/algorithm/pmedian")
     public ResponseEntity<PMedianResponse> pmedian(@RequestBody PMedianRequest request) {
         try {
@@ -203,6 +199,7 @@ public class GraphController {
             Integer p = request.getP();
             Boolean useDemand = request.getUseDemand();
             Boolean useRandomInitialization = request.getUseRandomInitialization();
+            System.out.println("useDemand" + request.getUseDemand());
     
             if (algorithm == null || algorithm.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
@@ -226,6 +223,40 @@ public class GraphController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(new PMedianResponse("Error while executing p-median: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/algorithm/p-median/cost-matrix")
+    public ResponseEntity<byte[]> getCostMatrix() {
+        try {
+            byte[] csvBytes = graphService.getCostMatrix();
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("text/csv"));
+            headers.setContentDispositionFormData("attachment", "cost_matrix.csv");
+            headers.setContentLength(csvBytes.length);
+            
+            return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/algorithm/p-median/demand-matrix")
+    public ResponseEntity<byte[]> getDemandMatrix() {
+        try {
+            byte[] csvBytes = graphService.getDemandMatrix();
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("text/csv"));
+            headers.setContentDispositionFormData("attachment", "demand_matrix.csv");
+            headers.setContentLength(csvBytes.length);
+            
+            return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

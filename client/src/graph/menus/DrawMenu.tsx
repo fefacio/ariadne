@@ -1,19 +1,23 @@
 import { generateGridPositions } from "../generation/generationGrid";
 import { generateRingPositions } from "../generation/generationRing";
-import type { GraphNode } from "../SVGCanvas"
-import type { NodeActions } from "../useGraphNodes"
+import type { GraphNode, NodeActions } from "../useGraphNodes"
 
 interface DrawMenuProps {
     nodeList: GraphNode[];
     nodeActions: NodeActions;
     viewBox: { x: number, y: number, width: number, height: number };
+    setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
-export function DrawMenu({nodeList, nodeActions, viewBox}: DrawMenuProps) {
+export function DrawMenu({nodeList, nodeActions, viewBox, setErrorMessage}: DrawMenuProps) {
     const handleDrawRing = () => {
+        if (nodeActions.getNodes().length==0){
+            setErrorMessage("There is no graph to draw");
+            return;
+        }
         const {nodes: ringPositions } = generateRingPositions(
             nodeList.length,
-            10,
+            50,
             {x: viewBox.x+40, y:viewBox.y+40},
             false
         );
@@ -28,6 +32,10 @@ export function DrawMenu({nodeList, nodeActions, viewBox}: DrawMenuProps) {
     }
 
     const handleDrawGrid = () => {
+        if (nodeActions.getNodes().length==0){
+            setErrorMessage("There is no graph to draw");
+            return;
+        }
         const gridPositions = generateGridPositions(
             nodeList.length,
             100,
@@ -58,20 +66,3 @@ export function DrawMenu({nodeList, nodeActions, viewBox}: DrawMenuProps) {
         </div>
     )
 }
-
-/*  (INSIDE DrawMenuContent)
-    DropDownMenu -> Drawing Type (ForceDirected, KamadaKawai...)
-    Ex: Selected ForceDirected
-    Component(DrawingOptions)
-        edgeLength:
-        maxIterations:
-        coolingFunctionStarterValue:
-
-    (INSIDE DrawMenuContent)
-    DropDownMenu -> Drawing Type (ForceDirected, KamadaKawai...)
-    Ex: Selected KamadaKawai
-    Component(DrawingOptions)
-        factor:
-        maxIterations:
-        coolingFunctionStarterValue:
-*/

@@ -1,5 +1,7 @@
 package com.fefacio.demo.model.response;
 
+import com.fefacio.demo.model.graph.Edge;
+
 public class EdgeResponse {
     private Integer id;
     private Integer sourceId;
@@ -11,6 +13,15 @@ public class EdgeResponse {
         this.sourceId = sourceId;
         this.targetId = targetId;
         this.weight = weight;
+    }
+
+    public static EdgeResponse from(Edge edge) {
+        return new EdgeResponse(
+            edge.getId(),
+            edge.getSource().getId(),
+            edge.getTarget().getId(),
+            edge.getWeight()
+        );
     }
 
     public Integer getId() { return id; }

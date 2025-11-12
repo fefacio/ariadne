@@ -1,10 +1,13 @@
-// =====================================================
-// RANDOM WEIGHT FUNCTIONS
+import { NodeTypes } from "../../types";
+import type { GraphEdge } from "../useGraphEdges";
+import type { GraphNode } from "../useGraphNodes";
+import type { EdgeGeneration, NodeGeneration } from "./generationUtils";
 
-import { NodeTypes } from "../../types/types";
-import type { GraphEdge, GraphNode } from "../SVGCanvas";
 
-// =====================================================
+// *^^^^^^^^^^^^^^^^^^^^^^^^^*                        
+// |  RANDOM WEIGHT          |
+// *-------------------------*
+
 export interface RandomWeightParams {
     from: number;
     to: number;
@@ -14,25 +17,19 @@ export interface RandomWeightParams {
     randomNumberOfEdges?: boolean;
 }
 
-/**
- * Gera um peso aleatório dentro do range especificado
- */
+
 function generateRandomWeight(from: number, to: number, includeDecimal: boolean): number {
     const random = Math.random() * (to - from) + from;
     return includeDecimal ? random : Math.round(random);
 }
 
-/**
- * Seleciona aleatoriamente N edges únicos de uma lista
- */
+
 function selectRandomEdges(edges: GraphEdge[], count: number): GraphEdge[] {
     const shuffled = [...edges].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, Math.min(count, edges.length));
 }
 
-/**
- * Randomiza pesos das arestas
- */
+
 export function randomizeWeights(
     edges: GraphEdge[],
     params: RandomWeightParams
@@ -62,44 +59,72 @@ export function randomizeWeights(
     return updatedWeights;
 }
 
-// =====================================================
-// RANDOM NODE TYPE FUNCTIONS
-// =====================================================
 
-export interface RandomNodeTypeParams {
-    consumerProbability: number; // 0 a 1 (0% a 100%)
+// *^^^^^^^^^^^^^^^^^^^^^^^^^*                        
+// |  RANDOM NODE PARAMS     |
+// *-------------------------*
+
+
+export interface RandomNodeParams {
+    randomizeConsumers: boolean;  
+    consumerProbability: number;
+    randomizeDemands: boolean;
+    demandFrom: number;
+    demandTo: number;
+    includeDecimalDemands: boolean;
 }
 
-/**
- * Randomiza tipos de nós baseado em probabilidade
- */
-export function randomizeNodeTypes(
+export function randomizeNodes(
     nodes: GraphNode[],
-    params: RandomNodeTypeParams
-): Map<number, typeof NodeTypes.CONSUMER | typeof NodeTypes.NORMAL> {
-    const updatedTypes = new Map<number, typeof NodeTypes.CONSUMER | typeof NodeTypes.NORMAL>();
+    params: RandomNodeParams
+): { 
+    types: Map<number, typeof NodeTypes.CONSUMER | typeof NodeTypes.NORMAL> | null,
+    demands: Map<number, number> | null
+} {
+    const updatedTypes = params.randomizeConsumers 
+        ? new Map<number, typeof NodeTypes.CONSUMER | typeof NodeTypes.NORMAL>() 
+        : null;
+    const updatedDemands = params.randomizeDemands ? new Map<number, number>() : null;
     
     for (const node of nodes) {
-        const random = Math.random();
-        const newType = random < params.consumerProbability 
-            ? NodeTypes.CONSUMER 
-            : NodeTypes.NORMAL;
-        updatedTypes.set(node.id, newType);
+        if (params.randomizeConsumers && updatedTypes) {
+            const random = Math.random();
+            const newType = random < params.consumerProbability 
+                ? NodeTypes.CONSUMER 
+                : NodeTypes.NORMAL;
+            updatedTypes.set(node.id, newType);
+        }
+        
+        if (params.randomizeDemands && updatedDemands) {
+            const isConsumer = updatedTypes 
+                ? updatedTypes.get(node.id) === NodeTypes.CONSUMER
+                : node.type === NodeTypes.CONSUMER;
+                
+            if (isConsumer) {
+                const newDemand = generateRandomWeight(
+                    params.demandFrom,
+                    params.demandTo,
+                    params.includeDecimalDemands
+                );
+                updatedDemands.set(node.id, newDemand);
+            }
+        }
     }
     
-    return updatedTypes;
+    return { types: updatedTypes, demands: updatedDemands };
 }
 
-// =====================================================
-// RANDOM EDGES 
-// =====================================================
+
+// *^^^^^^^^^^^^^^^^^^^^^^^^^*                        
+// |  RANDOM EDGE TYPE       |
+// *-------------------------*
 
 export interface RandomEdgesParams {
-    edgeProbability: number; // 0 a 1, probabilidade de criar cada aresta possível
-    maxAttempts?: number; // máximo de tentativas para gerar grafo conexo
+    edgeProbability: number; 
+    maxAttempts?: number;
 }
 
-// VERIFY USING BFS
+
 function isGraphConnected(nodeIds: number[], edges: Array<{ sourceId: number; targetId: number }>): boolean {
     if (nodeIds.length === 0) return true;
     if (nodeIds.length === 1) return true;
@@ -132,20 +157,21 @@ function isGraphConnected(nodeIds: number[], edges: Array<{ sourceId: number; ta
     return visited.size === nodeIds.length;
 }
 
+
 export function generateRandomEdges(
-    nodes: GraphNode[],
+    nodes: GraphNode[] | NodeGeneration[],
     params: RandomEdgesParams
-): Array<{ sourceId: number; targetId: number }> {
+): EdgeGeneration[] {
     if (nodes.length < 2) return [];
     
     const { edgeProbability, maxAttempts = 100 } = params;
     const nodeIds = nodes.map(n => n.id);
-    console.log("CORRECT !!!!!!!!!!!");
+
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const edges: Array<{ sourceId: number; targetId: number }> = [];
+        const edges: EdgeGeneration[] = [];
         const edgeSet = new Set<string>(); 
         
-        
+        let edgeId=0;
         for (let i = 0; i < nodeIds.length; i++) {
             for (let j = i + 1; j < nodeIds.length; j++) {
                 if (Math.random() < edgeProbability) {
@@ -154,8 +180,9 @@ export function generateRandomEdges(
                     const key = `${Math.min(node1, node2)}-${Math.max(node1, node2)}`;
                     
                     if (!edgeSet.has(key)) {
-                        edges.push({ sourceId: node1, targetId: node2 });
+                        edges.push({ id: edgeId, sourceId: node1, targetId: node2, weight: 1 });
                         edgeSet.add(key);
+                        edgeId+=1;
                     }
                 }
             }

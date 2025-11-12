@@ -80,12 +80,12 @@ public class Graph {
             ));
     }
 
-    public synchronized boolean removeNodeById(Integer id){
-        Node nodeToRemove = getNodeById(id);
+    public synchronized boolean removeNodeById(Integer nodeId){
+        Node nodeToRemove = getNodeById(nodeId);
         List<Edge> edgesToRemove = new ArrayList<>();
         
         for (Edge edge : edgeList) {
-            if (edge.getSource().getId().equals(id) || edge.getTarget().getId().equals(id)) {
+            if (edge.getSource().getId().equals(nodeId) || edge.getTarget().getId().equals(nodeId)) {
                 edgesToRemove.add(edge);
             }
         }
@@ -96,8 +96,8 @@ public class Graph {
             List<Edge> edges = adjacencyList.get(node);
             if (edges != null) {
                 edges.removeIf(edge -> 
-                    edge.getSource().getId().equals(id) || 
-                    edge.getTarget().getId().equals(id)
+                    edge.getSource().getId().equals(nodeId) || 
+                    edge.getTarget().getId().equals(nodeId)
                 );
             }
         }
@@ -106,7 +106,7 @@ public class Graph {
         adjacencyList.remove(nodeToRemove);
         
         // Remove node from nodeList
-        boolean removed = nodeList.removeIf(node -> node.getId().equals(id));
+        boolean removed = nodeList.removeIf(node -> node.getId().equals(nodeId));
         
         if (removed){
             invalidateMatrixCache();
@@ -130,7 +130,7 @@ public class Graph {
         return neighbors;
     }
 
-    public List<Node> getCustomerNodes() { 
+    public List<Node> getConsumerNodes() { 
         return this.nodeList.stream()
             .filter(n -> n.getType() == NodeType.CONSUMER)
             .toList();
@@ -228,7 +228,7 @@ public class Graph {
         return 0.0;
     }
 
-    public Integer getEdgeCount(){ return this.edgeList.size(); }
+    public Integer getEdgeCount(){ return this.edgeList.size()/2; }
     public List<Edge> getEdges(){ return new ArrayList<>(edgeList); }
     // *-------------------------*
     // |  EDGE METHODS END       |
@@ -310,25 +310,71 @@ public class Graph {
         }
         return laplacianMatrix;
     }
+
     public RealMatrix getCostMatrix() {
         if (!isConnected()){
             throw new IllegalStateException("Only available for fully connected graphs");
         }
         List<Node> candidates = getFacilityCandidates();
-        List<Node> consumers = getCustomerNodes();
+        List<Node> consumers = getConsumerNodes();
         int n = consumers.size();
         int m = candidates.size();
 
         RealMatrix cost = MatrixUtils.createRealMatrix(candidates.size(), consumers.size());
         GraphSearch gs = new GraphSearch(this);
         for (int i=0; i<m; i++){
+            Map<Node, Double> distances = gs.getDistancesDijkstra(candidates.get(i));
             for (int j=0; j<n; j++){
-                Node source = candidates.get(i);
-                Node target = consumers.get(j);
-                cost.setEntry(i, j, gs.searchBFS(source, target).getCost());
+                cost.setEntry(j, i, distances.get(consumers.get(j)));
             }
         }
         return cost;
+    }
+
+    public CostMatrixResult getCostMatrixWithMapping() {
+        if (!isConnected()){
+            throw new IllegalStateException("Only available for fully connected graphs");
+        }
+
+        List<Node> candidates = getFacilityCandidates();
+        List<Node> consumers = getConsumerNodes();
+        int n = consumers.size();
+        int m = candidates.size();
+
+
+        List<Integer> consumerIds = consumers.stream()
+            .map(Node::getId)
+            .collect(Collectors.toList());
+        
+        List<Integer> candidateIds = candidates.stream()
+            .map(Node::getId)
+            .collect(Collectors.toList());
+
+        RealMatrix cost = MatrixUtils.createRealMatrix(n, m);
+        GraphSearch gs = new GraphSearch(this);
+        
+        for (int i = 0; i < m; i++){
+            Map<Node, Double> distances = gs.getDistancesDijkstra(candidates.get(i));
+            for (int j = 0; j < n; j++){
+                cost.setEntry(j, i, distances.get(consumers.get(j)));
+            }
+        }
+        
+        return new CostMatrixResult(cost, consumerIds, candidateIds);
+    }
+
+    public NodeDemandsResult getNodeDemandsWithMapping() {
+        List<Node> consumers = getConsumerNodes();
+        
+        List<Double> demands = consumers.stream()
+            .map(Node::getDemand)
+            .collect(Collectors.toList());
+        
+        List<Integer> consumerIds = consumers.stream()
+            .map(Node::getId)
+            .collect(Collectors.toList());
+        
+        return new NodeDemandsResult(demands, consumerIds);
     }
 
     public int getMatrixIndexById(Integer nodeId) {
@@ -394,15 +440,33 @@ public class Graph {
         if (node == null) return 0.0;
         
         List<Edge> edges = adjacencyList.get(node);
-        if (edges==null){
+        if (edges == null){
             return 0.0;
         }
-        Double degree = edges.stream().mapToDouble(e -> e.getWeight()).sum();
-        return degree;
+        
+        return (double) edges.size();
     }
     public Double getDegreeById(Integer nodeId){
         Node node = getNodeById(nodeId);
         return getDegree(node);
+    }
+
+    public Double getStrength(Node node){
+        if (node == null) return 0.0;
+        
+        List<Edge> edges = adjacencyList.get(node);
+        if (edges == null){
+            return 0.0;
+        }
+        
+        return edges.stream()
+            .mapToDouble(Edge::getWeight)
+            .sum();
+    }
+
+    public Double getStrengthById(Integer nodeId){
+        Node node = getNodeById(nodeId);
+        return getStrength(node);
     }
 
     public boolean isWeighted(){
@@ -434,4 +498,38 @@ public class Graph {
     public Map<Node, List<Edge>> getAdjacencyList() { return adjacencyList; }
     public void setAdjacencyList(Map<Node, List<Edge>> adjacencyList) { this.adjacencyList = adjacencyList; }
 
+
+    public class CostMatrixResult {
+        private final RealMatrix costMatrix;
+        private final List<Integer> consumerIds;  // index -> consumerId
+        private final List<Integer> candidateIds; // index -> candidateId
+        
+        public CostMatrixResult(RealMatrix costMatrix, 
+                            List<Integer> consumerIds,
+                            List<Integer> candidateIds) {
+            this.costMatrix = costMatrix;
+            this.consumerIds = consumerIds;
+            this.candidateIds = candidateIds;
+        }
+        
+        public RealMatrix getCostMatrix() { return costMatrix; }
+        public List<Integer> getConsumerIds() { return consumerIds; }
+        public List<Integer> getCandidateIds() { return candidateIds; }
+        public Integer getConsumerId(int index) { return consumerIds.get(index); }
+        public Integer getCandidateId(int index) { return candidateIds.get(index); }
+    }
+
+    public class NodeDemandsResult {
+        private final List<Double> demands;
+        private final List<Integer> consumerIds; // index -> consumerId
+        
+        public NodeDemandsResult(List<Double> demands, List<Integer> consumerIds) {
+            this.demands = demands;
+            this.consumerIds = consumerIds;
+        }
+        
+        public List<Double> getDemands() { return demands; }
+        public List<Integer> getConsumerIds() { return consumerIds; }
+        public Integer getConsumerId(int index) { return consumerIds.get(index); }
+    }
 }

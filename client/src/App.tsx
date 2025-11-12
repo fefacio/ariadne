@@ -16,14 +16,11 @@ function App() {
     )
   }
   return (
-    <>
-      <div className="grid-container">
+    <div className="grid-container">
         <Toolbox/>
         <Toolbar/>
         <SVGCanvas key={sessionContext.resetKey}/>
-        
-      </div>
-    </>
+    </div>
   )
 }
 

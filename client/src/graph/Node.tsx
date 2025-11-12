@@ -1,19 +1,15 @@
 import React, { useRef } from "react";
-import { Modes, NodeTypes, type Mode, type NodeType } from "../types/types";
+import { NodeTypes, SvgModes, type SvgMode } from "../types";
 import useViewBoxCoordinates from "../hooks/useViewBoxCoordinates";
 import { DEFAULT_FACILITY_HEIGHT, DEFAULT_FACILITY_WIDTH } from "../constants";
 import { getClusterColor } from "../colors";
-import { NODE_STYLES, type NodeStyle } from "../styles";
+import { NODE_STYLES } from "../styles";
+import type { GraphNode } from "./useGraphNodes";
 
-type NodeProps = {
-    nodeId: number;
-    cx: number;
-    cy: number;
+type GraphNodeProps = {
+    node: GraphNode;
     r: number;
-    currentMode: Mode;
-    nodeType: NodeType;
-    nodeStyle: NodeStyle;
-    clusterId?: number; 
+    currentMode: SvgMode;
     onPositionUpdate: (nodeId: number, newPosition: Position) => void;
 };
 
@@ -22,7 +18,7 @@ interface Position {
     y: number;
 };
 
-export function GraphNode({nodeId, cx, cy, r, currentMode, nodeType, nodeStyle, clusterId, onPositionUpdate}: NodeProps) {
+export function Node({node, r, currentMode, onPositionUpdate}: GraphNodeProps) {
     const circleRef = useRef<SVGCircleElement>(null);
     const getViewBoxCoords = useViewBoxCoordinates(circleRef.current?.ownerSVGElement || null);
     const isDragging = useRef<boolean>(false);
@@ -31,10 +27,10 @@ export function GraphNode({nodeId, cx, cy, r, currentMode, nodeType, nodeStyle, 
     // const uiStateContext = useUIState();
     // const isEditMenuOpen = uiStateContext.isMenuOpen(MenuTypes.MENU_EDIT_NODE);
     // const editingNodeId = uiStateContext.getMenuMetadata(MenuTypes.MENU_EDIT_NODE)?.nodeId;
-    const isSelectMode = currentMode === Modes.SELECT;
+    const isSelectMode = currentMode === SvgModes.SELECT;
 
     const getFinalStyle = (): React.CSSProperties => {
-        const baseStyle = nodeStyle ?? NODE_STYLES.DEFAULT;
+        const baseStyle = node.style ?? NODE_STYLES.DEFAULT;
 
         const style: React.CSSProperties = {
             fill: baseStyle.fill,
@@ -43,9 +39,9 @@ export function GraphNode({nodeId, cx, cy, r, currentMode, nodeType, nodeStyle, 
             cursor: isSelectMode ? 'grab' : 'pointer'
         };
 
-        // Cluster color tem prioridade sobre fill
-        if (clusterId !== undefined) {
-            style.fill = getClusterColor(clusterId);
+
+        if (node.clusterId !== undefined) {
+            style.fill = getClusterColor(node.clusterId);
         }
 
         return style;
@@ -65,7 +61,7 @@ export function GraphNode({nodeId, cx, cy, r, currentMode, nodeType, nodeStyle, 
         if (isDragging.current){
             event.preventDefault();
             const svgCoords = getViewBoxCoords(event);
-            onPositionUpdate(nodeId, {x:svgCoords.x, y:svgCoords.y});
+            onPositionUpdate(node.id, {x:svgCoords.x, y:svgCoords.y});
         }
     }
 
@@ -80,44 +76,49 @@ export function GraphNode({nodeId, cx, cy, r, currentMode, nodeType, nodeStyle, 
         <g 
         onMouseDown={handleDragStart}
         data-node
-        data-node-id={nodeId}
-        data-cluster-id={clusterId}
+        data-node-id={node.id}
+        data-cluster-id={node.clusterId}
         className={"node"}>  
-            {nodeType ===  NodeTypes.CONSUMER && (
+            {node.type ===  NodeTypes.CONSUMER && (
                 <circle
-                    cx={cx}
-                    cy={cy}
+                    cx={node.x}
+                    cy={node.y}
                     r={r+5}
                     style={finalStyle}
                 />
             )}
             <circle
                 ref={circleRef}
-                cx={cx}
-                cy={cy}
+                cx={node.x}
+                cy={node.y}
                 r={r}
-                data-node-id={nodeId}
+                data-node-id={node.id}
                 style={finalStyle}
         
             />
-            {nodeType ===  NodeTypes.FACILITY && (
+            {node.type ===  NodeTypes.FACILITY && (
                 <rect
-                    x={cx-DEFAULT_FACILITY_WIDTH/2}
-                    y={cy-DEFAULT_FACILITY_HEIGHT/2}
+                    x={node.x-DEFAULT_FACILITY_WIDTH/2}
+                    y={node.y-DEFAULT_FACILITY_HEIGHT/2}
                     width={DEFAULT_FACILITY_WIDTH}
                     height={DEFAULT_FACILITY_HEIGHT}
                     style={{...finalStyle, userSelect: "none", pointerEvents: "none" }}
                 />
             )}
             <text
-                x={cx}
-                y={cy}
+                x={node.x}
+                y={node.y}
                 textAnchor="middle"
                 alignmentBaseline="middle"
                 fontSize="12"
                 fill="black"
                 style={{ userSelect: "none", pointerEvents: "none" }}
-            > {nodeId.toString()}</text>
+            >
+                {node.label}
+                {node.demand && (
+                    <tspan fill="red">{`(${node.demand})`}</tspan>
+                )}
+            </text>
             
 
         </g>

@@ -33,9 +33,19 @@ DELETE EDGE 2
 */
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { GraphEdge } from "./SVGCanvas";
 import { graphAPI } from "./graphAPI";
 import { INNER_EDGE_STYLES, OUTER_EDGE_STYLES, type EdgeStyle } from "../styles";
+
+
+export interface GraphEdge {
+    id: number;
+    sourceId: number;
+    targetId: number;
+    weight: number;
+    innerStyle: EdgeStyle;
+    outerStyle: EdgeStyle;
+};
+
 
 export interface EdgeActions {
     add: (node1Id:number, node2Id:number, weight?: number) => Promise<void>; 
@@ -43,7 +53,9 @@ export interface EdgeActions {
     updateWeight: (id: number, newWeight: number) => Promise<void>;
     getUnique: () => GraphEdge[];
     getById:  (id: number) => GraphEdge;
+    getPair: (edgeId: number) => ( number | undefined)[];
     getEdges: () => GraphEdge[];
+    setEdges: (edges: GraphEdge[]) => void;
     updateStyle: (id: number, style: EdgeStyle, isInner: boolean) => void;
     resetStyle: (id: number) => void;
     resetStyles: () => void;
@@ -52,26 +64,22 @@ export interface EdgeActions {
 export const useGraphEdges = () => {
     const [edgeList, setEdgeList] = useState<GraphEdge[]>([]);
     const edgeListRef = useRef<GraphEdge[]>([]);
+
     useEffect(() => {
         edgeListRef.current = edgeList;
     }, [edgeList]);
     
     const addEdge = useCallback(async (node1Id: number, node2Id: number, weight: number = 1) => {
         try {
-            console.log("[addEdge] calling graph API for creating edge");
-           
             const currentEdgeList = await new Promise<GraphEdge[]>((resolve) => {
                 setEdgeList(prev => {
                     resolve(prev);
                     return prev;
                 });
             });
-             console.log("Current edgeList:", currentEdgeList);
             const existingConnection = currentEdgeList.some(edge => 
                 edge.sourceId === node1Id && edge.targetId === node2Id
             );
-
-            console.log("EXISTING CON: "+existingConnection);
 
             if (existingConnection) {
                 throw new Error(`Connection between nodes ${node1Id} and ${node2Id} already exists`);
@@ -92,12 +100,9 @@ export const useGraphEdges = () => {
                 innerStyle: INNER_EDGE_STYLES.DEFAULT,
                 outerStyle: OUTER_EDGE_STYLES.DEFAULT
             }));
-            console.log("TESTE DO ADD EDGE:");
-            console.log(newEdges[0].innerStyle);
 
             setEdgeList(prev => [...prev, ...newEdges]);
             
-            //console.log(`Created ${newEdges.length} edges:`, newEdges);
             
         } catch (error) {
             console.error("[ERROR] WHILE CREATING EDGE: "+error);
@@ -110,36 +115,26 @@ export const useGraphEdges = () => {
     e garantir que o metodo seje executado uma vez por thread
     */
     const deleteEdge = useCallback(async (sourceId: number, targetId: number) => {
-        console.log(`[deleteEdge CALLED] source=${sourceId}, target=${targetId}`);
-        console.log(`[deleteEdge] Current edgeList:`, JSON.stringify(edgeList));
         try {
             const edgesToDelete = edgeList.filter(edge => 
                 (edge.sourceId === sourceId && edge.targetId === targetId) ||
                 (edge.sourceId === targetId && edge.targetId === sourceId)
             );
-            console.log(`[deleteEdge] Found ${edgesToDelete.length} edges to delete:`, edgesToDelete);
-            console.log("EDGES TO DELETE")
-            console.log(edgesToDelete)
             // await Promise.all(
             //     edgesToDelete.map(edge => graphAPI.deleteEdge(edge.id)));
-            let i = 0;
             for (const edge of edgesToDelete) {
-                console.log(`[deleteEdge] Deleting edge ${i + 1}/${edgesToDelete.length}: ID ${edge.id}`);
                 try {
                     await graphAPI.deleteEdge(edge.id);
-                    console.log(`[deleteEdge] Successfully deleted edge ID ${edge.id}`);
                 } catch (error) {
                     console.error(`[deleteEdge] Failed to delete edge ID ${edge.id}:`, error);
                     // Continua mesmo com erro
                 }
-                i++;
             }
 
             setEdgeList(prevEdges => {
                 const newEdges = prevEdges.filter(edge => 
                     !edgesToDelete.some(deletedEdge => deletedEdge.id === edge.id)
                 );
-                console.log(`[deleteEdge] Updated edgeList: ${prevEdges.length} -> ${newEdges.length}`);
                 return newEdges;
             });
 
@@ -160,7 +155,7 @@ export const useGraphEdges = () => {
                     )
                 );
             } else {
-                alert("[URGENT] WRONG EDGE ID");
+                console.error("[ERROR] WRONG EDGE ID");
             }
             
         } catch (error) {
@@ -179,10 +174,23 @@ export const useGraphEdges = () => {
         return edge;
     }, [edgeList]);
 
-    const getAllEdges = useCallback(() => {
-        return edgeList;
+    const getEdgePair = useCallback((edgeId: number) => {
+        const edge = getEdgeById(edgeId);
+        const reverse = edgeList.find(
+            (e) => e.sourceId === edge.targetId && e.targetId === edge.sourceId
+        );
+        return [edgeId, reverse?.id]
+    },
+    [edgeList, getEdgeById])
 
-    }, [edgeList]);
+
+    const getAllEdges = useCallback(() => {
+        return edgeListRef.current;  
+    }, []);  
+
+    const setAllEdges = useCallback((edges: GraphEdge[]) => {
+        setEdgeList(edges);
+    }, []);
 
     const normalizeEdge = useCallback((sourceId: number, targetId: number) => {
         return sourceId < targetId 
@@ -205,6 +213,8 @@ export const useGraphEdges = () => {
         });
     },
     [normalizeEdge, edgeList]);
+
+    
 
     const updateEdgeStyle = useCallback((edgeId: number, style: EdgeStyle, isInner: boolean) => {
             setEdgeList(prev => 
@@ -241,7 +251,9 @@ export const useGraphEdges = () => {
         updateWeight: updateEdgeWeight,
         getUnique: getUniqueEdges,
         getById: getEdgeById,
+        getPair: getEdgePair,
         getEdges: getAllEdges,
+        setEdges: setAllEdges,
         updateStyle: updateEdgeStyle,
         resetStyle: resetEdgeStyle,
         resetStyles: resetAllStyles

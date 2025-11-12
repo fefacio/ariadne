@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { Modes, NodeTypes, type Mode, type NodeType } from "../types/types"
+import { NodeTypes, SvgModes, type NodeType, type SvgMode } from "../types"
 
 export interface AddNodeParams {
     nodeType: NodeType;
@@ -12,7 +12,7 @@ export interface AddEdgeParams {
 
 
 interface AddNodeFormProps {
-    currentMode: Mode,
+    currentMode: SvgMode,
     addNodeParams: AddNodeParams;
     setAddNodeParams: React.Dispatch<React.SetStateAction<AddNodeParams>>;
     addEdgeParams: AddEdgeParams;
@@ -33,22 +33,24 @@ export function AddParameters({currentMode, addNodeParams, setAddNodeParams, add
     }, [setAddNodeParams]);
 
     const handleDemandChange = useCallback((value: number) => {
+        const newDemand = Math.min(100, Math.max(1, value));
         setAddNodeParams(prev => ({
             ...prev,
-            demand: value
+            demand: newDemand
         }));
     }, [setAddNodeParams]);
 
     const handleWeightChange = useCallback((value: number) => {
+        const newWeight = value <= 0 ? 1 : value;
         setAddEdgeParams(prev => ({
             ...prev,
-            weight: value
+            weight: newWeight
         }));
     }, [setAddEdgeParams]);
 
     return (
         <div className="add-params">
-            {currentMode===Modes.ADD_NODE && (
+            {currentMode===SvgModes.ADD_NODE && (
                 <div>
                     <span>Node parameters: </span>
                     <form className="add-node-form">
@@ -88,6 +90,7 @@ export function AddParameters({currentMode, addNodeParams, setAddNodeParams, add
                                 id="demand"
                                 type="number"
                                 min="1"
+                                max="100"
                                 step="1"
                                 value={addNodeParams.demand ?? 1.0}
                                 onChange={(e) => handleDemandChange(+e.target.value)}
@@ -96,7 +99,7 @@ export function AddParameters({currentMode, addNodeParams, setAddNodeParams, add
                     )}
                 </div>
             )}
-            {currentMode===Modes.ADD_EDGE && (
+            {currentMode===SvgModes.ADD_EDGE && (
                 <div>
                     <span>Edge parameters: </span> <br/>
                     <label htmlFor="weight">Weight: </label>

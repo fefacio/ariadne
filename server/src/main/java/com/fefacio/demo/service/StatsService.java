@@ -14,6 +14,7 @@ import com.fefacio.demo.algorithm.GraphStats;
 import com.fefacio.demo.model.graph.Graph;
 import com.fefacio.demo.model.graph.Node;
 import com.fefacio.demo.model.graph.Edge;
+import com.fefacio.demo.model.response.StatsGraphResponse;
 import com.fefacio.demo.model.response.StatsNodeResponse;
 
 @Service
@@ -46,12 +47,13 @@ public class StatsService {
         StatsNodeResponse response = new StatsNodeResponse();
         
         response.setId(node.getId());
-        response.setLabel(node.getLabel());
         response.setType(node.getType().name());
         
         double degree = graph.getDegree(node);
         response.setDegree(degree);
         response.setNormalizedDegree(graphCentrality.nodeDegreeCentrality(node));
+        response.setStrength(graph.getStrength(node));
+        response.setNormalizedStrength(graphCentrality.nodeStrengthCentrality(node));
 
         List<Integer> neighborIds = new ArrayList<>();
         List<Edge> edges = graph.getAdjacencyList().getOrDefault(node, new ArrayList<>());
@@ -75,7 +77,7 @@ public class StatsService {
             StringBuilder csv = new StringBuilder();
             
             // Header
-            csv.append("ID,Label,Type,Degree,Normalized Degree,Betweenness,Closeness,")
+            csv.append("ID,Type,Degree,Normalized Degree,Strength,Normalized Strength,Betweenness,Closeness,")
                .append("Avg Path Length,Clustering Coefficient,Eccentricity\n");
             
 
@@ -88,10 +90,11 @@ public class StatsService {
                 StatsNodeResponse stats = buildNodeStats(node, graphCentrality, graphStats);
                 
                 csv.append(stats.getId()).append(",")
-                   .append(stats.getLabel()).append(",")
                    .append(stats.getType()).append(",")
                    .append(stats.getDegree()).append(",")
                    .append(stats.getNormalizedDegree()).append(",")
+                   .append(stats.getStrength()).append(",")
+                   .append(stats.getNormalizedStrength()).append(",")
                    .append(stats.getBetweennessCentrality()).append(",")
                    .append(stats.getClosenessCentrality()).append(",")
                    .append(stats.getAveragePathLength()).append(",")
@@ -106,5 +109,46 @@ public class StatsService {
             e.printStackTrace();
             throw new RuntimeException("Failed to generate nodes report", e);
         }
+    }
+
+    public StatsGraphResponse getGraphStatistics() {
+        System.out.println("INSIDE GRAPH STATISTICS");
+        
+        GraphCentrality graphCentrality = new GraphCentrality(graph);
+        GraphStats graphStats = new GraphStats(graph);
+        
+        
+        return buildGraphStats(graphCentrality, graphStats);
+    }
+
+    private StatsGraphResponse buildGraphStats(GraphCentrality graphCentrality, GraphStats graphStats) {
+        StatsGraphResponse response = new StatsGraphResponse();
+        
+        response.setNumberOfNodes(graph.getNodeCount());
+        response.setNumberOfEdges(graph.getEdgeCount());
+        response.setNumberOfConsumers(graph.getConsumerNodes().size());
+        response.setNumberOfCandidates(graph.getFacilityCandidates().size());
+        response.setAvgDemand(graphStats.avgDemand());
+    
+        response.setMinDegree(graphStats.minDegree());
+        response.setMaxDegree(graphStats.maxDegree());
+        response.setAvgDegree(graphStats.avgDegree());
+
+        response.setMinStrength(graphStats.minStrength());
+        response.setMaxStrength(graphStats.maxStrength());
+        response.setAvgStrength(graphStats.avgStrength());
+
+        response.setDensity(graphStats.graphDensity());
+        response.setRadius(graphStats.graphRadius());
+        response.setDiamater(graphStats.graphDiameter());
+        response.setAvgClusteringCoefficient(graphStats.averageClusteringCoefficient());
+        response.setAvgPathLength(graphStats.averageGraphPathLength());
+
+        response.setAvgDegreeCentrality(graphCentrality.avgDegreeCentrality());
+        response.setAvgStrengthCentrality(graphCentrality.avgStrengthCentrality());
+        response.setAvgClosenessCentrality(graphCentrality.avgClosenessCentrality());
+        response.setAvgBetweennessCentrality(graphCentrality.avgBetweennessCentrality());
+
+        return response;
     }
 }

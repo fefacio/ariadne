@@ -1,5 +1,7 @@
-import type { Position } from "../types/types";
-import type { GraphEdge, GraphNode } from "./SVGCanvas";
+import type { Position } from "../types";
+import type {  } from "./SVGCanvas";
+import type { GraphEdge } from "./useGraphEdges";
+import type { GraphNode } from "./useGraphNodes";
 
 interface NodeDrawing {
     id: number;
@@ -123,7 +125,6 @@ export function forceDirected(W: number, L: number, nodes: GraphNode[], edges: G
             }
             //node.pos.x = Math.max(0, Math.min(W - 0, node.pos.x));
             //node.pos.y = Math.max(0, Math.min(L - 0, node.pos.y));
-            console.log("INSIDEDRAWING:"+ node.disp.x);
         }
         i+=1;
         nodePositionsSeries.push({

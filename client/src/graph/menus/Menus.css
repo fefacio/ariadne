@@ -75,3 +75,90 @@
     font-weight: bold;
 }
 
+
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.shortcut-item {
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.shortcut-view, .shortcut-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.shortcut-description {
+  flex: 1;
+  font-weight: 500;
+  min-width: 150px;
+}
+
+.shortcut-keys {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+  transition: all 0.2s;
+}
+
+.shortcut-keys.conflict {
+  background: rgba(220, 38, 38, 0.3);
+  border: 1px solid rgba(220, 38, 38, 0.6);
+  color: #000000;
+}
+
+.conflict-warning {
+  color: #fbbf24;
+  font-size: 1.2em;
+  cursor: help;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.shortcut-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.shortcut-input-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9em;
+}
+
+.key-input {
+  width: 40px;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 0.25rem;
+}
+
+.shortcut-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.reset-button {
+  margin-top: 1rem;
+  width: 100%;
+}

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import type { GraphNode } from "./SVGCanvas";
 import { type EdgeStyle } from "../styles";
+import type { GraphNode } from "./useGraphNodes";
 
 interface EdgeProps {
     edgeId: number;
@@ -12,7 +12,7 @@ interface EdgeProps {
     edgeOuterStyle: EdgeStyle;
 };
 
-export function GraphEdge({edgeId, nodeList, node1Id, node2Id, weight, edgeInnerStyle, edgeOuterStyle}: EdgeProps){
+export function Edge({edgeId, nodeList, node1Id, node2Id, weight, edgeInnerStyle, edgeOuterStyle}: EdgeProps){
     const { node1, node2 } = useMemo(() => {
         let foundNode1 = null;
         let foundNode2 = null;

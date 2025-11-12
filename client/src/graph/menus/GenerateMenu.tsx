@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type NodeType, type Position } from "../../types/types";
+import { type NodeType, type Position } from "../../types";
 import { generateGrid, generateRandom, GridTypes, type GridType } from "../generation/generationGrid";
 import "./Menus.css";
 import { CollapsibleSection } from "../../components/CollapsibleSection";
@@ -23,9 +23,10 @@ interface GenerateMenuProps {
     addNode: (x: number, y: number, type: NodeType, demand: number | null) => Promise<number>;
     addEdge: (node1Id: number, node2Id: number) => Promise<void>;
     viewBox: { x: number, y: number, width: number, height: number };
+    setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-export function GenerateMenu({addNode, addEdge, viewBox}: GenerateMenuProps) {
+export function GenerateMenu({addNode, addEdge, viewBox, setErrorMessage}: GenerateMenuProps) {
     const [generationType, setGenerationType] = useState<GenerationType>(GenerationTypes.GRID);
     const [gridType, setGridType] = useState<GridType>(GridTypes.SQUARE);
     const [fillingType, setFillingType] = useState<FillingType>(FillingTypes.NEIGHBORS_VH);
@@ -51,6 +52,9 @@ export function GenerateMenu({addNode, addEdge, viewBox}: GenerateMenuProps) {
         useOnlyNodes: false
     });
 
+    const [edgeProbability, setEdgeProbability] = useState<number>(0.5);
+    const [maxAttempts, setMaxAttempts] = useState<number>(100);
+
     const getInitialPosition = (): Position => {
         const paddingLeft = 40;
         const paddingTop = 40;
@@ -63,68 +67,80 @@ export function GenerateMenu({addNode, addEdge, viewBox}: GenerateMenuProps) {
     }
 
     const handleGenerate = async () => {
-        const initialPosition = getInitialPosition();
+        try {
+            const initialPosition = getInitialPosition();
 
-        let nodeCount;
-        if (generationType === GenerationTypes.GRID) {
-            nodeCount = isFillingGrid ? getMaxNodes() : numberOfNodes;
-        } else {
-            nodeCount = numberOfNodes;
-        }
+            let nodeCount;
+            if (generationType === GenerationTypes.GRID) {
+                nodeCount = isFillingGrid ? getMaxNodes() : numberOfNodes;
+            } else {
+                nodeCount = numberOfNodes;
+            }
 
-        const baseParams = {
-            spacing: styleParams.spacing,
-            useNoise: styleParams.useNoise,
-            noisePercentage: styleParams.noisePercentage,
-            fillingType: fillingType,
-            numberOfNodes: nodeCount,
-            initialPosition: initialPosition
-        };
+            const baseParams = {
+                spacing: styleParams.spacing,
+                useNoise: styleParams.useNoise,
+                noisePercentage: styleParams.noisePercentage,
+                fillingType: fillingType,
+                numberOfNodes: nodeCount,
+                initialPosition: initialPosition
+            };
 
 
-        let graph: Graph;
+            let graph: Graph;
 
-        if (generationType === GenerationTypes.GRID) {
-            graph = generateGrid({
-                ...baseParams,
-                gridType,
-                gridSize: gridType === GridTypes.SQUARE ? gridSize : undefined,
-                rows: gridType === GridTypes.RECTANGULAR ? rows : undefined,
-                columns: gridType === GridTypes.RECTANGULAR ? columns : undefined
-            });
-        } else if (generationType === GenerationTypes.RING) {
-            graph = generateRing({
-                ...baseParams,
-                k: k,
-                probability: probability,
-                m: m,
-                m0: m0
-            });
-        } else {
-            graph = generateRandom(nodeCount, viewBox.width, viewBox.height);
-        }
+            if (generationType === GenerationTypes.GRID) {
+                graph = generateGrid({
+                    ...baseParams,
+                    gridType,
+                    gridSize: gridType === GridTypes.SQUARE ? gridSize : undefined,
+                    rows: gridType === GridTypes.RECTANGULAR ? rows : undefined,
+                    columns: gridType === GridTypes.RECTANGULAR ? columns : undefined,
+                    edgeProbability: edgeProbability,
+                    maxAttempts: maxAttempts
+                });
+            } else if (generationType === GenerationTypes.RING) {
+                graph = generateRing({
+                    ...baseParams,
+                    k: k,
+                    probability: probability,
+                    m: m,
+                    m0: m0,
+                    edgeProbability,
+                    maxAttempts
+                });
+            } else {
+                graph = generateRandom(nodeCount, viewBox.width, viewBox.height, edgeProbability, maxAttempts);
+            }
 
-        const { nodes, edges } = graph;
-        
-        
-        // CREATE NODES IN BACKEND AND MAP NEW IDS
-        const idMap = new Map<number, number>();
-        for (const node of nodes){
-            const oldId = node.id;
-            const newId = await addNode(node.x, node.y, node.type, null);
-            node.id = newId;
-            idMap.set(oldId, newId);
-        }
-        if (!styleParams.useOnlyNodes){
-            for (const edge of edges){
-                console.log("Edge inside generation: ");
-                
-                const newSourceId = idMap.get(edge.sourceId)!;
-                const newTargetId = idMap.get(edge.targetId)!;
-                console.log("source: "+newSourceId+" target: "+newTargetId);
-                addEdge(newSourceId, newTargetId);
+            const { nodes, edges } = graph;
+            
+            
+            // CREATE NODES IN BACKEND AND MAP NEW IDS
+            const idMap = new Map<number, number>();
+            for (const node of nodes){
+                const oldId = node.id;
+                const newId = await addNode(node.x, node.y, node.type, null);
+                node.id = newId;
+                idMap.set(oldId, newId);
+            }
+            if (!styleParams.useOnlyNodes){
+                for (const edge of edges){
+                    const newSourceId = idMap.get(edge.sourceId)!;
+                    const newTargetId = idMap.get(edge.targetId)!;
+                    
+                    addEdge(newSourceId, newTargetId);
+                }
+            }
+        } catch (error) {
+            console.error("Generation error:", error);
+            if (error instanceof Error){
+                setErrorMessage(error.message);
+            } else {
+                setErrorMessage("Failed to generate graph");
             }
         }
+        
     }
     
     return (
@@ -191,17 +207,18 @@ export function GenerateMenu({addNode, addEdge, viewBox}: GenerateMenuProps) {
 
                 <CollapsibleSection title="FILLING">
                 
-                    <div className="params-group filling"> 
-                        <label htmlFor="isFillingGrid">Fill Grid:</label>
-                        <input
-                            id="isFillingGrid"
-                            type="checkbox"
-                            checked={isFillingGrid}
-                            onChange={(e) => setIsFillingGrid(e.target.checked)}
-                        />
-
+                    <div>
+                        <div className="params-group">
+                            <label htmlFor="isFillingGrid">Fill Grid:</label>
+                            <input
+                                id="isFillingGrid"
+                                type="checkbox"
+                                checked={isFillingGrid}
+                                onChange={(e) => setIsFillingGrid(e.target.checked)}
+                            />
+                        </div> 
                         {!isFillingGrid && (
-                        <div className="param-group">
+                        <div className="params-group">
                             <label htmlFor="numberOfNodes">Number of Nodes:</label>
                             <input
                                 id="numberOfNodes"
@@ -229,6 +246,35 @@ export function GenerateMenu({addNode, addEdge, viewBox}: GenerateMenuProps) {
                                 <option value={FillingTypes.NEIGHBORS_VHD}>Neighbors+ (V+H+Diag)</option>
                             </select>
                         </div>
+
+                        {fillingType === FillingTypes.RANDOM && (
+                            <>
+                                <label htmlFor="edgeProb">Edge Probability:</label>
+                                <input
+                                    id="edgeProb"
+                                    type="number"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value={edgeProbability}
+                                    onChange={(e) => setEdgeProbability(+e.target.value)}
+                                />
+                                <span className="full-width-text">
+                                    {(edgeProbability * 100).toFixed(0)}% chance for each possible edge
+                                </span>
+
+                                <label htmlFor="maxAttempts">Max Attempts:</label>
+                                <input
+                                    id="maxAttempts"
+                                    type="number"
+                                    min="10"
+                                    max="1000"
+                                    value={maxAttempts}
+                                    onChange={(e) => setMaxAttempts(+e.target.value)}
+                                />
+                                <span className="hint">Tries to generate connected graph</span>
+                            </>
+                            )}
                         
                     </div>
                 </CollapsibleSection>
@@ -368,6 +414,34 @@ export function GenerateMenu({addNode, addEdge, viewBox}: GenerateMenuProps) {
                                 </span>
                             </>
                             )}
+                            {fillingType === FillingTypes.RANDOM && (
+                            <>
+                                <label htmlFor="edgeProb">Edge Probability:</label>
+                                <input
+                                    id="edgeProb"
+                                    type="number"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value={edgeProbability}
+                                    onChange={(e) => setEdgeProbability(+e.target.value)}
+                                />
+                                <span className="full-width-text">
+                                    {(edgeProbability * 100).toFixed(0)}% chance for each possible edge
+                                </span>
+
+                                <label htmlFor="maxAttempts">Max Attempts:</label>
+                                <input
+                                    id="maxAttempts"
+                                    type="number"
+                                    min="10"
+                                    max="1000"
+                                    value={maxAttempts}
+                                    onChange={(e) => setMaxAttempts(+e.target.value)}
+                                />
+                                <span className="hint">Tries to generate connected graph</span>
+                            </>
+                            )}
 
                         </div>
                     </CollapsibleSection>
@@ -383,7 +457,32 @@ export function GenerateMenu({addNode, addEdge, viewBox}: GenerateMenuProps) {
                     value={numberOfNodes} 
                     onChange={(e) => setNumberOfNodes(+e.target.value)}
                 />
+                <label htmlFor="edgeProb">Edge Probability:</label>
+                <input
+                    id="edgeProb"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={edgeProbability}
+                    onChange={(e) => setEdgeProbability(+e.target.value)}
+                />
+                <span className="full-width-text">
+                    {(edgeProbability * 100).toFixed(0)}% chance for each possible edge
+                </span>
+
+                <label htmlFor="maxAttempts">Max Attempts:</label>
+                <input
+                    id="maxAttempts"
+                    type="number"
+                    min="10"
+                    max="1000"
+                    value={maxAttempts}
+                    onChange={(e) => setMaxAttempts(+e.target.value)}
+                />
+                <span className="hint">Tries to generate connected graph</span>
             </div>
+            
             )}
             
             <div className="menu-button">

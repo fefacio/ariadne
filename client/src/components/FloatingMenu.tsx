@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useUIState } from "../context/uiState/useUIState";
 import "./FloatingMenu.css";
-import { MenuTypes, type MenuType } from "../types/types";
+import { MenuTypes, type MenuType } from "../types";
 
 
 interface FloatingMenuProps {

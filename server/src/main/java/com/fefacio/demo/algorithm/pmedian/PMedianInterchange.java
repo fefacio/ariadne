@@ -12,27 +12,28 @@ public class PMedianInterchange extends PMedianBase {
     private Random random;
     
     public PMedianInterchange(double[][] distances, double[] weights, 
-                                int numFacilities, Set<Integer> initialSolution) {
-        super(distances, weights, numFacilities);
+                                int numFacilities, List<Integer> consumerIds, List<Integer> candidateIds, Set<Integer> initialSolution) {
+        super(distances, weights, numFacilities, consumerIds, candidateIds);
         this.pStar = new HashSet<>(initialSolution);
         this.random = new Random();
     }
 
     public PMedianInterchange(double[][] distances, double[] weights, 
-                               int numFacilities, boolean randomInit) {
-        super(distances, weights, numFacilities);
+                               int numFacilities, List<Integer> consumerIds, List<Integer> candidateIds, boolean randomInit) {
+        super(distances, weights, numFacilities, consumerIds,  candidateIds);
         this.random = new Random();
         if (randomInit) {
             this.pStar = generateRandomInitialSolution(random);
+            System.out.println("Initial random solution: " + this.getSolutionNodeIds());
         } else {
             throw new IllegalArgumentException(
-                "Use constructor with initialSolution or set randomInit=true");
+                "Use constructor with initialSolution");
         }
     }
 
     public PMedianInterchange(double[][] distances, double[] weights, 
-                               int numFacilities, boolean randomInit, long seed) {
-        super(distances, weights, numFacilities);
+                               int numFacilities, List<Integer> consumerIds, List<Integer> candidateIds, boolean randomInit, long seed) {
+        super(distances, weights, numFacilities, consumerIds, candidateIds);
         this.random = new Random(seed);
         if (randomInit) {
             this.pStar = generateRandomInitialSolution(random);

@@ -1,7 +1,5 @@
 package com.fefacio.demo.algorithm;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +13,7 @@ public class GraphCentrality {
     private GraphSearch graphSearch;
 
     public GraphCentrality(Graph graph) {
-        System.out.println("IS GRAPH CONNECT? "+graph.isConnected());
+        System.out.println("IS GRAPH CONNECTED? "+graph.isConnected());
         if (!graph.isConnected()) {
             throw new IllegalArgumentException("GraphCentrality requires a connected graph.");
         }
@@ -29,10 +27,8 @@ public class GraphCentrality {
         Map<Integer, Double> centrality = new HashMap<>();
         int n = graph.getNodeCount();
 
-        
         for (Node node : graph.getNodes()) {
             double degree = graph.getDegree(node);
-            System.out.println("DEGREE:" +degree);
             if (degree == 0){
                 centrality.put(node.getId(), degree);
             } else {
@@ -40,10 +36,56 @@ public class GraphCentrality {
             }
             
         }
+        return centrality;
+    }
+
+    public double avgDegreeCentrality() {
+        Map<Integer, Double> centrality = degreeCentrality();
+        
+        if (centrality.isEmpty()) return 0.0;
+        
+        double sum = 0.0;
+        for (Double value : centrality.values()) {
+            sum += value;
+        }
+        
+        return Math.round(sum / centrality.size()*100.0)/100.0;
+    }
+
+    public Map<Integer, Double> strengthCentrality() {
+        Map<Integer, Double> centrality = new HashMap<>();
+        
+        double maxStrength = 0.0;
+        for (Node node : graph.getNodes()) {
+            double strength = graph.getStrength(node);
+            maxStrength = Math.max(maxStrength, strength);
+        }
+        
+        for (Node node : graph.getNodes()) {
+            double strength = graph.getStrength(node);
+            if (maxStrength == 0) {
+                centrality.put(node.getId(), 0.0);
+            } else {
+                centrality.put(node.getId(), strength / maxStrength);
+            }
+        }
         
         return centrality;
     }
+
     
+    public double avgStrengthCentrality() {
+        Map<Integer, Double> centrality = strengthCentrality();
+        
+        if (centrality.isEmpty()) return 0.0;
+        
+        double sum = 0.0;
+        for (Double value : centrality.values()) {
+            sum += value;
+        }
+        
+        return Math.round(sum / centrality.size()*100.0)/100.0;
+    }
 
 
     public Map<Integer, Double> closenessCentrality() {
@@ -68,6 +110,20 @@ public class GraphCentrality {
         
         return centrality;
     }
+
+    public double avgClosenessCentrality() {
+        Map<Integer, Double> centrality = closenessCentrality();
+        
+        if (centrality.isEmpty()) return 0.0;
+        
+        double sum = 0.0;
+        for (Double value : centrality.values()) {
+            sum += value;
+        }
+        
+        return Math.round(sum / centrality.size()*100.0)/100.0;
+    }
+
 
     // Brandes (2001)
     public Map<Integer, Double> betweennessCentrality(boolean isWeighted) {
@@ -125,7 +181,25 @@ public class GraphCentrality {
         return centrality;
     }
     public Map<Integer, Double> betweennessCentrality(){
-        return betweennessCentrality(false);
+        return betweennessCentrality(true);
+    }
+
+
+    public double avgBetweennessCentrality(boolean isWeighted) {
+        Map<Integer, Double> centrality = betweennessCentrality(isWeighted);
+        
+        if (centrality.isEmpty()) return 0.0;
+        
+        double sum = 0.0;
+        for (Double value : centrality.values()) {
+            sum += value;
+        }
+        
+        return Math.round(sum / centrality.size()*100.0)/100.0;
+    }
+
+    public double avgBetweennessCentrality() {
+        return avgBetweennessCentrality(false);
     }
 
     
@@ -137,6 +211,15 @@ public class GraphCentrality {
 
         return Math.round(degree*100.0)/100.0;
     }
+
+    public Double nodeStrengthCentrality(Node node){
+        Map<Integer, Double> centrality = strengthCentrality();
+        Double strength = centrality.get(node.getId());
+        if (strength==null) return -1.0;
+
+        return Math.round(strength*100.0)/100.0;
+    }
+
 
     public Double nodeClosenessCentrality(Node node){
         Map<Integer, Double> centrality = closenessCentrality();

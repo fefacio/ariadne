@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useUIState } from "../../context/uiState/useUIState";
-import { useSession } from "../../context/session/useSession";
-import { Modes } from "../../types/types";
 import { graphAPI } from "../graphAPI";
 import { INNER_EDGE_STYLES, NODE_STYLES, OUTER_EDGE_STYLES, type NodeStyle } from "../../styles";
 import { CollapsibleSection } from "../../components/CollapsibleSection";
 import type { EdgeActions } from "../useGraphEdges";
+import { SvgModes } from "../../types";
 
 const SearchMethods = {
     BFS: "BFS",
@@ -32,7 +31,6 @@ export function SearchMenu({sourceNodeId, targetNodeId, updateStyle, resetStyles
         path?: Array<{ id: number; label: string; type: string }>;
     } | null>(null);
 
-    const sessionContext = useSession();
     const uiStateContext = useUIState();
 
 
@@ -40,7 +38,7 @@ export function SearchMenu({sourceNodeId, targetNodeId, updateStyle, resetStyles
         if (sourceNodeId!==null) {
             updateStyle(sourceNodeId, NODE_STYLES.DEFAULT);
         }
-        sessionContext.setMode(Modes.SELECT_NODE);
+        uiStateContext.setMode(SvgModes.SELECT_NODE);
         uiStateContext.setSelectingNodeFor('source');
     };
 
@@ -48,7 +46,7 @@ export function SearchMenu({sourceNodeId, targetNodeId, updateStyle, resetStyles
         if (targetNodeId!==null) {
             updateStyle(targetNodeId!, NODE_STYLES.DEFAULT);
         }
-        sessionContext.setMode(Modes.SELECT_NODE);
+        uiStateContext.setMode(SvgModes.SELECT_NODE);
         uiStateContext.setSelectingNodeFor('target');
     };
 
@@ -67,7 +65,6 @@ export function SearchMenu({sourceNodeId, targetNodeId, updateStyle, resetStyles
 
             const response = await graphAPI.searchGraph(searchRequest);
             
-            console.log('Search result:', response);
             if (response.found) {
                 resetStyles();
                 edgeActions.resetStyles();
@@ -96,7 +93,6 @@ export function SearchMenu({sourceNodeId, targetNodeId, updateStyle, resetStyles
                     path: response.path
                 });
 
-                console.log(`Path found with cost ${response.cost}:`, response.path);
             } else {
                 setSearchResult({
                     isFound: false,
@@ -111,6 +107,26 @@ export function SearchMenu({sourceNodeId, targetNodeId, updateStyle, resetStyles
             alert('Failed to execute search. Please try again.');
         }
     };
+
+    const handleGenerate = async () => {
+        try {
+            const blob = await graphAPI.getDistanceMatrix();
+            
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'nodes_distances.csv';
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+        } catch (error) {
+            console.error('Error geting distance matrix:', error);
+        }
+    }
+    
     return (
         <>
             <label> Method: </label>
@@ -172,6 +188,11 @@ export function SearchMenu({sourceNodeId, targetNodeId, updateStyle, resetStyles
                 </CollapsibleSection>
             
             )}
+            <div className="params-group">
+                <span> Generate distances matrix as csv: </span>
+                <button onClick={handleGenerate}> Generate </button>
+
+            </div>
 
             
         </>

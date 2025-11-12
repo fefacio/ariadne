@@ -1,20 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // [TODO] Change GraphNode to {id: number, position: Position}?
 // [CHECK] radial generation circle, clustering
 import "./SVGCanvas.css";
 import React, { useCallback, useEffect, useRef, useState} from "react";
 //import useWindowDimensions from "../hooks/useWindowDimensions";
 
-import { GraphNode } from './GraphNode'
-import { MenuTypes, Modes, NodeTypes, type MenuType, type NodeType } from "../types/types";
+import { MenuTypes, NodeTypes, SvgModes, type MenuType } from "../types";
 import { DrawingTempState, EdgeCreation } from "./EdgeCreation";
-import { GraphEdge } from "./GraphEdge";
+import { Edge } from "./Edge";
+import { Node } from "./Node";
 import useViewBoxCoordinates from "../hooks/useViewBoxCoordinates";
 
 
 // Custom Hooks
-import { useGraphNodes } from "./useGraphNodes";
+import { useGraphNodes, type GraphNode } from "./useGraphNodes";
 import { useGraphEdges } from "./useGraphEdges";
-import { useSession } from "../context/session/useSession";
 import { FloatingMenu } from "../components/FloatingMenu";
 import { EditNodeMenu } from "./menus/EditNodeMenu";
 import { DrawMenu } from "./menus/DrawMenu";
@@ -25,33 +25,18 @@ import { FileIOMenu } from "./menus/FileIOMenu";
 import { SearchMenu } from "./menus/SearchMenu";
 import { EditEdgeMenu } from "./menus/EditEdgeMenu";
 import { ClusterMenu } from "./menus/ClusterMenu";
-import { HelloMenu } from "./menus/HelloMenu";
+import { DebugMenu } from "./menus/DebugMenu";
 import { StatsMenu } from "./menus/StatsMenu";
 import { PMedianMenu } from "./menus/PMedianMenu";
-import { INNER_EDGE_STYLES, NODE_STYLES, OUTER_EDGE_STYLES, type EdgeStyle, type NodeStyle } from "../styles";
+import { INNER_EDGE_STYLES, NODE_STYLES, OUTER_EDGE_STYLES } from "../styles";
 import { AddParameters, type AddEdgeParams, type AddNodeParams } from "./AddParams";
 import { ErrorMessage } from "./ErrorMessage";
 import { RandomizerMenu } from "./menus/RandomizerMenu";
 import { ResetMenu } from "./menus/ResetMenu";
+import { GlobalConfigMenu } from "./menus/GlobalConfigMenu";
+import { ReportMenu } from "./menus/ReportMenu";
 
-export interface GraphNode  {
-    id: number;
-    x: number;
-    y: number;
-    type: NodeType;
-    demand: number | null;
-    style: NodeStyle;
-    clusterId?: number;
-};
 
-export interface GraphEdge {
-    id: number;
-    sourceId: number;
-    targetId: number;
-    weight: number;
-    innerStyle: EdgeStyle;
-    outerStyle: EdgeStyle;
-};
 
 interface TempEdge {
     nodeCx: number;
@@ -63,12 +48,12 @@ interface TempEdge {
 
 export function SVGCanvas() {
     // Contexts
-    const sessionContext = useSession();
+    // const sessionContext = useSession();
     const uiStateContext = useUIState();
     
     //const {currentWindowSize} = useWindowDimensions();
     const [, forceRender] = useState({});
-    const [mouseCoords, setMouseCoords] = useState({x:0, y:0});
+    const [mouseCoords,  setMouseCoords] = useState({x:0, y:0});
     const [svgCoords, setSvgCoords] = useState({x:0, y:0});
     const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 500, height: 500 });
     const [isPanning, setIsPanning] = useState(false);
@@ -90,20 +75,16 @@ export function SVGCanvas() {
             }
             
 
-            if (isPanning && sessionContext.currentMode===Modes.SELECT) {
+            if (isPanning && uiStateContext.currentMode===SvgModes.SELECT) {
                 const coords = getViewBoxCoords(event)
-                console.log("ok")
-                console.log("ViewBox antes:", viewBox);
                 setViewBox(prev => ({
                     ...prev,
                     x: prev.x - (coords.x - lastPanPoint.x),
                     y: prev.y - (coords.y - lastPanPoint.y)
                 }));
-                console.log("ViewBox atual:", viewBox);
             }
-            //console.log("AA"+svgCoords.x+"A2"+svgCoords.y);
         },
-        [isPanning, sessionContext.currentMode, getViewBoxCoords, lastPanPoint]
+        [isPanning, uiStateContext.currentMode, getViewBoxCoords, lastPanPoint]
     )
 
     const handleMouseDown = useCallback(
@@ -130,7 +111,6 @@ export function SVGCanvas() {
         (event: React.WheelEvent<SVGSVGElement>) => {
             const zoomFactor = 0.2;
             const zoomIn = event.deltaY < 0;
-            console.log("deltayY:" +event.deltaY);
             const scale = zoomIn ? (1 - zoomFactor) : (1 + zoomFactor);
             const svgCoords = getViewBoxCoords(event);
 
@@ -256,13 +236,11 @@ export function SVGCanvas() {
         edgeCreation.onEdgeComplete = edgeActions.add;
 
         const handleClickOutside = (event: MouseEvent) => {
-            // Verifica se está no modo ADD_EDGE e no estado DrawingTempState
-            if (sessionContext.currentMode === Modes.ADD_EDGE && 
+            if (uiStateContext.currentMode === SvgModes.ADD_EDGE && 
                 edgeCreation.getState() instanceof DrawingTempState) {
                 
                 const target = event.target as HTMLElement;
                 
-                // Verifica se o clique foi fora do SVG
                 if (!svgRef.current?.contains(target)) {
                     console.log("Clicked outside canvas - canceling edge creation");
                     edgeCreation.clickEmpty();
@@ -278,7 +256,7 @@ export function SVGCanvas() {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [sessionContext.currentMode, edgeCreation, forceRender, edgeActions.add]);
+    }, [uiStateContext.currentMode, edgeCreation, forceRender, edgeActions.add]);
 
     // *-----------------------------*
     // |                             |
@@ -288,11 +266,6 @@ export function SVGCanvas() {
     
     const handleClickSVGCanvas = async (event: React.MouseEvent<SVGSVGElement>) => {
         if (!svgRef.current) return;
-        for (const edge of edgeList){
-            console.log(edge.id+" s "+edge.sourceId+" t "+edge.targetId+" w "+edge.weight);
-        }
-        console.log("UNIQUE EDGES")
-        console.log(edgeActions.getUnique())
 
         setMouseCoords({x:event.clientX, y:event.clientY});
         const svgCoords = getViewBoxCoords(event);
@@ -300,13 +273,9 @@ export function SVGCanvas() {
 
         const clickedElement= event.target as SVGElement;
         const edgeGroup = clickedElement.closest("[data-edge]");
-        console.log("EDGE-GROUP");
-        console.log(edgeGroup);
-        console.log("EDGES");
-        console.log(edgeList)
 
         console.log('Clicou em:', clickedElement.tagName);
-        if (sessionContext.currentMode===Modes.SELECT){
+        if (uiStateContext.currentMode===SvgModes.SELECT){
             if (clickedElement.tagName === "circle"){
                 const circleElement = clickedElement as SVGCircleElement;
                 const circleId = Number(circleElement.getAttribute("data-node-id"));
@@ -321,22 +290,20 @@ export function SVGCanvas() {
         }
         
 
-        if (sessionContext.currentMode===Modes.ADD_NODE) {
+        if (uiStateContext.currentMode===SvgModes.ADD_NODE) {
             const demandValue = addNodeParams.nodeType === NodeTypes.CONSUMER 
                 ? addNodeParams.demand 
                 : null;
             nodeActions.add(svgCoords.x, svgCoords.y, addNodeParams.nodeType, demandValue);
         }
 
-        if (sessionContext.currentMode===Modes.ADD_EDGE){
+        if (uiStateContext.currentMode===SvgModes.ADD_EDGE){
             if (clickedElement.tagName === "circle") {
                 try {
                     await edgeCreation.clickCircle(clickedElement as SVGCircleElement, addEdgeParams.weight);
                 } catch (error) {
                     if (error instanceof Error) {
-                        console.log("DANCE UNTIL IM DEAD");
                         setErrorMessage(error.message);
-                        console.log("New error message:", error.message);
                     }
                 }
             } else {
@@ -345,11 +312,7 @@ export function SVGCanvas() {
             }
         }
 
-        for (const edge of edgeList){
-            console.log("edge: "+edge.id);
-
-        }
-        if (sessionContext.currentMode===Modes.DELETE) {
+        if (uiStateContext.currentMode===SvgModes.DELETE) {
             if (clickedElement.tagName == "circle") {
                 const circleElement = clickedElement as SVGCircleElement;
                 const circleId = Number(circleElement.getAttribute("data-node-id"));
@@ -362,7 +325,7 @@ export function SVGCanvas() {
             }
         }
 
-        if (sessionContext.currentMode===Modes.EDIT){
+        if (uiStateContext.currentMode===SvgModes.EDIT){
             if (clickedElement.parentElement?.hasAttribute("data-node")){
                 const circleElement = clickedElement as SVGCircleElement;
                 const circleId = Number(circleElement.getAttribute("data-node-id"));
@@ -379,7 +342,7 @@ export function SVGCanvas() {
             }
         }
 
-        if (sessionContext.currentMode === Modes.SELECT_NODE) {
+        if (uiStateContext.currentMode === SvgModes.SELECT_NODE) {
             
             if (clickedElement.tagName === "circle" || clickedElement.parentElement?.hasAttribute("data-node")) {
                 const nodeElement = clickedElement as SVGCircleElement;
@@ -400,7 +363,7 @@ export function SVGCanvas() {
                     }
                     
                     // Volta ao modo SELECT e limpa o estado
-                    sessionContext.setMode(Modes.SELECT);
+                    uiStateContext.setMode(SvgModes.SELECT);
                     uiStateContext.setSelectingNodeFor(null);
                 }
             }
@@ -415,9 +378,9 @@ export function SVGCanvas() {
     // |                                        |
     // *----------------------------------------*
     const menuConfig: Record<MenuType, { title: string; content: React.ReactNode; }> = {
-        MENU_HELLO: {
-            title: "Hello",
-            content: <HelloMenu nodeActions={nodeActions} edgeActions={edgeActions}/>
+        MENU_DEBUG: {
+            title: "Debug",
+            content: <DebugMenu nodeActions={nodeActions} edgeActions={edgeActions}/>
         },
         MENU_EDIT_NODE: { 
             title: "Edit Node", 
@@ -433,11 +396,19 @@ export function SVGCanvas() {
         },
         MENU_DRAW: { 
             title: "Draw Options", 
-            content: <DrawMenu nodeList={nodeList} nodeActions={nodeActions} viewBox={viewBox} /> 
+            content: <DrawMenu 
+                nodeList={nodeList} 
+                nodeActions={nodeActions} 
+                viewBox={viewBox} 
+                setErrorMessage={setErrorMessage} /> 
         },
         MENU_GENERATE: { 
             title: "Generate Graph", 
-            content: <GenerateMenu addNode={nodeActions.add} addEdge={edgeActions.add} viewBox={viewBox}/> 
+            content: <GenerateMenu 
+                addNode={nodeActions.add} 
+                addEdge={edgeActions.add} 
+                viewBox={viewBox}
+                setErrorMessage={setErrorMessage}/> 
         },
         MENU_RANDOMIZER: {
             title: "Randomizer",
@@ -450,10 +421,13 @@ export function SVGCanvas() {
         MENU_FILE_IO: {
             title: "File",
             content: <FileIOMenu 
-                nodeList={nodeList} 
+                nodeList={nodeList}
+                nodeActions={nodeActions}
                 edgeActions={edgeActions}
                 setNodeList={setNodeList} 
-                setEdgeList={setEdgeList}/>
+                setEdgeList={setEdgeList}
+                viewBox={viewBox}
+                setErrorMessage={setErrorMessage}/>
         },
         MENU_SEARCH: {
             title: "Search",
@@ -467,27 +441,42 @@ export function SVGCanvas() {
         },
         MENU_CLUSTER: {
             title: "Cluster",
-            content: <ClusterMenu nodeActions={nodeActions}/>
+            content: <ClusterMenu 
+                nodeActions={nodeActions}
+                setErrorMessage={setErrorMessage}/>
         },
         MENU_STATS: {
             title: "Statistics",
-            content: <StatsMenu 
+            content: <StatsMenu
+                nodeActions={nodeActions}
                 statsNodeId={statsNodeId} 
                 resetStyles={nodeActions.resetStyles}
                 setErrorMessage={setErrorMessage}
+
                 />
         },
         MENU_PMEDIAN: {
             title: "P-Median",
-            content: <PMedianMenu/>
+            content: <PMedianMenu 
+                nodeActions={nodeActions}
+                setErrorMessage={setErrorMessage}/>
+        },
+        MENU_REPORT: {
+            title: "Report",
+            content: <ReportMenu
+                nodeActions={nodeActions}
+                edgeActions={edgeActions}
+                setErrorMessage={setErrorMessage}/>
+        },
+        MENU_GLOBAL_CONFIG: {
+            title: "Configuration",
+            content: <GlobalConfigMenu nodeActions={nodeActions}/>
         }
     };
 
     const openMenuComponents = uiStateContext.openMenuList.map(openMenu => {
         const config = menuConfig[openMenu.type];
         let content: React.ReactNode;
-        console.log("OPEN MENU TYPE");
-        console.log(openMenu.type);
 
         if (openMenu.type===MenuTypes.MENU_EDIT_NODE){
             const nodeId = openMenu.metadata?.nodeId;
@@ -514,16 +503,11 @@ export function SVGCanvas() {
     
 
     const nodeComponents = nodeList.map(node => 
-        <GraphNode 
+        <Node 
             key={node.id}
-            nodeId={node.id} 
-            cx={node.x} 
-            cy={node.y} 
+            node={node} 
             r={DEFAULT_RADIUS_SIZE}
-            currentMode={sessionContext.currentMode}
-            nodeType={node.type}
-            nodeStyle={node.style}
-            clusterId={node.clusterId}
+            currentMode={uiStateContext.currentMode}
             onPositionUpdate={nodeActions.updatePosition}/>
     )
 
@@ -547,7 +531,7 @@ export function SVGCanvas() {
     const edgeComponents = useCallback(() => {
         const uniqueEdges = edgeActions.getUnique();
         return uniqueEdges.map(edge => 
-            <GraphEdge 
+            <Edge 
                 key={edge.id}
                 edgeId={edge.id}
                 nodeList={nodeList} 
@@ -563,10 +547,10 @@ export function SVGCanvas() {
 
     return (
         <div className="svgCanvas">
-            {(sessionContext.currentMode === Modes.ADD_NODE || 
-                sessionContext.currentMode === Modes.ADD_EDGE) && (
+            {(uiStateContext.currentMode === SvgModes.ADD_NODE || 
+                uiStateContext.currentMode === SvgModes.ADD_EDGE) && (
                 <AddParameters 
-                    currentMode={sessionContext.currentMode}
+                    currentMode={uiStateContext.currentMode}
                     addNodeParams={addNodeParams}
                     setAddNodeParams={setAddNodeParams}
                     addEdgeParams={addEdgeParams}
@@ -580,24 +564,6 @@ export function SVGCanvas() {
                 />
             )}
             
-            {/* <p> {currentWindowSize.width} {currentWindowSize.height}</p> */}
-            <p> <span style={{background: "rgba(184, 159, 159, 1)"}}>mouseCoords: </span>{mouseCoords.x.toFixed(2)} {mouseCoords.y.toFixed(2)}</p>
-            <p> <span style={{background: "rgba(247, 232, 150, 1)"}}>svgCoords: </span> {svgCoords.x.toFixed(2)} {svgCoords.y.toFixed(2)}</p>
-            <p>
-            {clickedCircle && (
-                <>
-                <span style={{ background: "rgba(1, 255, 107, 1)" }}>Clicked Circle:</span>{" "}
-                {clickedCircle.x} | {clickedCircle.y} | ID: {clickedCircle.id}
-                </>
-            )}
-            </p>
-            <p> ViewBox Coords 
-                x:{viewBox.x.toFixed(2)} |
-                y:{viewBox.y.toFixed(2)} |
-                width:{viewBox.width.toFixed(2)} |
-                height:{viewBox.height.toFixed(2)} |
-            </p>
-            <p style={{background: "yellow"}}> {sessionContext.currentMode} </p>
             {openMenuComponents}
             <svg version="1.1"
                 xmlns="http://www.w3.org/2000/svg"
@@ -613,8 +579,6 @@ export function SVGCanvas() {
                 onWheel={(e) => handleWheel(e)}
                 >
 
-                
-    
                 <defs>
                     <pattern id="grid-advanced" width="50" height="50" patternUnits="userSpaceOnUse">
                         <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#8ff97cff" strokeWidth="3"/>
@@ -642,13 +606,9 @@ export function SVGCanvas() {
                     />   
                     : null
                 }
-
-                
-                
-                
             </svg>
-            
         </div>
     
     )
 }
+

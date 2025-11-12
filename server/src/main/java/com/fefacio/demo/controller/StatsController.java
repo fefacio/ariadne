@@ -27,10 +27,7 @@ public class StatsController {
     @Autowired
     private StatsService statsService;
     
-    // @GetMapping("/graph")
-    // public ResponseEntity<StatsGraphResponse> getGraphStatistics(){
-        
-    // }
+
 
     @GetMapping("/node/{id}")
     public ResponseEntity<StatsNodeResponse> getNodeStatistics(@PathVariable Integer id) {
@@ -43,7 +40,6 @@ public class StatsController {
         try {
             byte[] csvBytes = statsService.getNodesReport();
             
-            // Configurar headers para download
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv"));
             headers.setContentDispositionFormData("attachment", "nodes_report.csv");
@@ -56,4 +52,9 @@ public class StatsController {
         }
     }
     
+    @GetMapping("/graph")
+    public ResponseEntity<StatsGraphResponse> getGraphStatistics() {
+        StatsGraphResponse response = statsService.getGraphStatistics();
+        return ResponseEntity.ok(response);
+    }
 }

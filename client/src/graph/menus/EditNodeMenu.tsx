@@ -1,10 +1,11 @@
 import { useCallback, useState } from "react";
-import { NodeTypes, type NodeType } from "../../types/types";
+import { NodeTypes, type NodeType } from "../../types";
 import type { NodeActions } from "../useGraphNodes";
 
 interface NodeParams {
     nodeId: number;
     type: NodeType;
+    demand: number | null;
 };
 
 interface EditNodeMenuProps {
@@ -16,7 +17,8 @@ export function EditNodeMenu({nodeId, nodeActions}: EditNodeMenuProps) {
     
     const [nodeParams, setNodeParams] = useState<NodeParams>({
         nodeId: nodeId,
-        type: node ? node.type : NodeTypes.NORMAL
+        type: node ? node.type : NodeTypes.NORMAL,
+        demand: node ? node.demand : 1
     });
 
     const handleChange = useCallback(
@@ -24,32 +26,55 @@ export function EditNodeMenu({nodeId, nodeActions}: EditNodeMenuProps) {
             const newType: NodeType = event.target.value as NodeType;
             setNodeParams(prev => ({ ...prev, type: newType }));
             nodeActions.updateType(nodeId, newType);
-            console.log("NEWTYPE: "+nodeParams.type);
-
     },
-    [nodeId, nodeParams.type, nodeActions]);
+    [nodeId, nodeActions]
+    );
+
+    const handleDemandChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            const newDemand: number = Math.min(100, Math.max(1, +event.target.value));
+            setNodeParams(prev => ({ ...prev, demand: newDemand }));
+            nodeActions.updateDemand(nodeId, newDemand);
+        },
+    [nodeActions, nodeId],
+    )
 
     return (
         <div>
             <p> Node {nodeId} </p>
             <div className="params">
-                <label htmlFor="nodeType">Node Type: </label>
-                <select
-                    id={"nodeType"}
-                    value={nodeParams.type}
-                    onChange={(e) => handleChange(e)}
-                >
-                    {Object.values(NodeTypes).map( type => (
-                        <option
-                            key={type}
-                            value={type}
-                        >
-                            {type}
-                        </option>
-                    ))}
+                <div className="params-group">
+                    <label htmlFor="nodeType">Node Type: </label>
+                    <select
+                        id={"nodeType"}
+                        value={nodeParams.type}
+                        onChange={(e) => handleChange(e)}
+                    >
+                        {Object.values(NodeTypes).map( type => (
+                            <option
+                                key={type}
+                                value={type}
+                            >
+                                {type}
+                            </option>
+                        ))}
 
-                </select>
-            
+                    </select>
+                    {nodeParams.type === NodeTypes.CONSUMER && (
+                        <>
+                            <label htmlFor="demand">Demand: </label>
+                            <input
+                                id="demand"
+                                type="number"
+                                min="1"
+                                max="100"
+                                step="1"
+                                value={nodeParams.demand ?? 1.0}
+                                onChange={(e) => handleDemandChange(e)}
+                            />
+                        </>
+                    )}
+                </div>
             </div>
         </div >
     )

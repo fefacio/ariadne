@@ -1,7 +1,12 @@
 interface NodeRequest {
-    label?: string;
     type?: string;
     demand?: number | null;
+};
+
+interface NodeResponse {
+    id: number;
+    type: string;
+    demand: number | null;
 };
 
 interface EdgeRequest {
@@ -113,82 +118,109 @@ class GraphAPIClient {
 
     private async request<T>(
         endpoint: string, 
-        options: RequestInit = {}
+        options: RequestInit = {},
+        returnBlob: boolean = false
     ): Promise<T> {
         const url = `${this.baseUrl}${endpoint}`;
-        console.log("URL: "+ url);  
+        console.log(`${options.method} ${url} ${options.body ? `with ${options.body}` : ""}`);    
 
         try {
-        const response = await fetch(url, {
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-        ...options,
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers,
+                },
+            ...options,
+            });
 
-        const contentType = response.headers.get('content-type');
-        if (contentType?.includes('application/json')) {
-            return response.json();
-        } else {
-            return response.text() as T;
-        }
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            if (returnBlob) {
+                return response.blob() as T;
+            }
+
+
+            const contentType = response.headers.get('content-type');
+            if (contentType?.includes('application/json')) {
+                return response.json();
+            } else {
+                return response.text() as T;
+            }
         } catch (e) {
-        console.log("FETCH ERROR: ", e);
-        throw e;
+            console.log("FETCH ERROR: ", e);
+            throw e;
         }
         
     }
 
-    createNode = async (nodeData: NodeRequest): Promise<number> => {
-        return this.request<number>('/node', {
-        method: 'POST',
-        body: JSON.stringify(nodeData),
+    createNode = async (nodeData: NodeRequest): Promise<NodeResponse> => {
+        return this.request<NodeResponse>('/node', {
+            method: 'POST',
+            body: JSON.stringify(nodeData),
         });
     };
 
     importGraph = async (jsonData: GraphJsonData): Promise<ImportGraphResponse> => {
         return this.request('/import/json', {
-        method: 'POST',
-        body: JSON.stringify(jsonData),
+            method: 'POST',
+            body: JSON.stringify(jsonData),
         });
     };
 
     searchGraph = async (searchRequest: SearchRequest): Promise<SearchResponse> => {
         return this.request('/algorithm/search', {
-        method: 'POST',
-        body: JSON.stringify(searchRequest),
+            method: 'POST',
+            body: JSON.stringify(searchRequest),
         });
     };
 
+    getDistanceMatrix = async (): Promise<Blob> => {
+        return this.request<Blob>(`/algorithm/search/distance-matrix`, {
+            method: 'GET'
+        }, true); 
+    }
+
+    getCostMatrix = async (): Promise<Blob> => {
+        return this.request<Blob>(`/algorithm/p-median/cost-matrix`, {
+            method: 'GET'
+        }, true); 
+    }
+
+    getDemandMatrix = async (): Promise<Blob> => {
+        return this.request<Blob>(`/algorithm/p-median/demand-matrix`, {
+            method: 'GET'
+        }, true); 
+    }
+
+
+
     pmedianGraph = async (pMedianRequest: PMedianRequest): Promise<PMedianResposne> => {
         return this.request('/algorithm/pmedian', {
-        method: 'POST',
-        body: JSON.stringify(pMedianRequest),
+            method: 'POST',
+            body: JSON.stringify(pMedianRequest),
         });
     };
 
     clusterGraph = async (clusterRequest: ClusterRequest): Promise<ClusterResponse> => {
         return this.request('/algorithm/cluster', {
-        method: 'POST',
-        body: JSON.stringify(clusterRequest),
+            method: 'POST',
+            body: JSON.stringify(clusterRequest),
         });
     };
 
-    updateNode = async (nodeId: number, nodeData: NodeRequest): Promise<number> => {
-        return this.request<number>(`/node/${nodeId}`, {
-        method: 'PUT',
-        body: JSON.stringify(nodeData),
+    updateNode = async (nodeId: number, nodeData: NodeRequest): Promise<NodeResponse> => {
+        return this.request<NodeResponse>(`/node/${nodeId}`, {
+            method: 'PUT',
+            body: JSON.stringify(nodeData),
         });
     };
 
     deleteNode = async (nodeId: number): Promise<void> => {
         return this.request<void>(`/node/${nodeId}`, {
-        method: 'DELETE',
+            method: 'DELETE',
         });
     };
 
@@ -196,32 +228,32 @@ class GraphAPIClient {
 
     createEdge = async (edgeData: EdgeRequest): Promise<EdgeResponse[]> => {
         return this.request<EdgeResponse[]>('/edge', {
-        method: 'POST',
-        body: JSON.stringify(edgeData),
+            method: 'POST',
+            body: JSON.stringify(edgeData),
         });
     };
 
-    updateEdge = async (edgeId: number, edgeData: EdgeRequest): Promise<number> => {
-        return this.request<number>(`/edge/${edgeId}`, {
-        method: 'PUT',
-        body: JSON.stringify(edgeData),
+    updateEdge = async (edgeId: number, edgeData: EdgeRequest): Promise<EdgeResponse> => {
+        return this.request<EdgeResponse>(`/edge/${edgeId}`, {
+            method: 'PUT',
+            body: JSON.stringify(edgeData),
         });
     };
 
     deleteEdge = async (edgeId: number): Promise<void> => {
         return this.request<void>(`/edge/${edgeId}`, {
-        method: 'DELETE',
+            method: 'DELETE',
         });
     };
 
     clearGraph = async (): Promise<void> => {
-        console.log("CLEARING!!!!!");
+        console.log("CLEARING GRAPH!");
         return this.request<void>('/clear', {
         method: 'DELETE',
         });
     };
 
-    createMultipleNodes = async (nodes: NodeRequest[]): Promise<number[]> => {
+    createMultipleNodes = async (nodes: NodeRequest[]): Promise<NodeResponse[]> => {
         const promises = nodes.map(node => this.createNode(node));
         return Promise.all(promises);
     };
@@ -234,7 +266,7 @@ class GraphAPIClient {
     buildGraph = async (graphData: {
         nodes: NodeRequest[];
         edges: EdgeRequest[];
-    }): Promise<{ nodes: number[]; edges: EdgeRequest[][] }> => {
+    }): Promise<{ nodes: NodeResponse[]; edges: EdgeResponse[][] }> => {
         await this.clearGraph();
         
         const nodes = await this.createMultipleNodes(graphData.nodes);

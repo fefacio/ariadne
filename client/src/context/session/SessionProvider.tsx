@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from "react";
-import { Modes, type Mode } from "../../types/types";
 import type { SessionContextType } from "./SessionContextType";
 import { SessionContext } from "./SessionContext";
 import { graphAPI } from "../../graph/graphAPI";
@@ -10,7 +9,6 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
     const [sessionId] = useState<string>(() => {
         return `session_${crypto.randomUUID()}`;
     })
-    const [currentMode, setCurrentMode] = useState<Mode>(Modes.SELECT);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [resetKey, setResetKey] = useState<number>(0);
     const [isServerReady, setIsServerReady] = useState<boolean>(false);
@@ -20,8 +18,6 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
         
         try {
             const response = await graphAPI.checkHealth();
-            console.log("RESPOSTA!!", response);
-
             if (response && response.isServerUp) {
                 console.log("Backend ready!");
                 setIsServerReady(true);
@@ -36,32 +32,23 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
     []);
 
     const newSession = useCallback( async () => {
-        console.log("NEW SESSION: "+sessionId);
+        console.log("Session id: "+sessionId);
         checkServerIsUp();
     },
     [sessionId, checkServerIsUp])
 
     
     const resetFrontend = useCallback(() => {
-        console.log("RESETTING FRONTEND");
         setResetKey(prev => prev + 1); 
-        setCurrentMode(Modes.SELECT);
     }, []);
 
     const clearSession = useCallback(() => {
-        console.log("BYE BYE!");
         graphAPI.clearGraph();
         resetFrontend();
     },
     [resetFrontend])
 
-    const setMode = useCallback(
-        (mode: Mode) => {
-            console.log("NEW MODE IS: "+mode);
-            setCurrentMode(mode);
-        },
-        []
-    );
+    
 
     useEffect(() => {
         window.addEventListener('pageshow', newSession);
@@ -80,8 +67,6 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
 
     const sessionContext: SessionContextType = useMemo(() => ({
         sessionId,
-        currentMode,
-        setMode,
         newSession,
         clearSession,
         isLoading,
@@ -90,8 +75,6 @@ export const SessionProvider: React.FC<PropsWithChildren> = (props) => {
         isServerReady,
         setIsServerReady
     }), [clearSession, 
-        currentMode, 
-        setMode, 
         isLoading, 
         newSession, 
         sessionId, 

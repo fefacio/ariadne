@@ -2,21 +2,25 @@ package com.fefacio.demo.service;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
 import org.springframework.stereotype.Service;
 
+import com.fefacio.demo.algorithm.GraphCentrality;
 import com.fefacio.demo.algorithm.GraphClustering;
 import com.fefacio.demo.algorithm.GraphSearch;
+import com.fefacio.demo.algorithm.GraphStats;
+import com.fefacio.demo.algorithm.pmedian.PMedianClustering;
 import com.fefacio.demo.algorithm.pmedian.PMedianGreedy;
 import com.fefacio.demo.algorithm.pmedian.PMedianInterchange;
-import com.fefacio.demo.algorithm.pmedian.PMedianORTools;
 import com.fefacio.demo.model.graph.Edge;
 import com.fefacio.demo.model.graph.Graph;
 import com.fefacio.demo.model.graph.Node;
@@ -30,6 +34,7 @@ import com.fefacio.demo.model.response.GraphDataResponse;
 import com.fefacio.demo.model.response.NodeResponse;
 import com.fefacio.demo.model.response.PMedianResponse;
 import com.fefacio.demo.model.response.SearchResponse;
+import com.fefacio.demo.model.response.StatsNodeResponse;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -39,11 +44,12 @@ public class GraphService {
     private GraphSearch search = new GraphSearch(graph);
     private final Gson gson = new Gson();
     
-    public Node getNode(Integer nodeId){
-        return graph.getNodeById(nodeId);
+    public NodeResponse getNode(Integer nodeId){
+        Node node = graph.getNodeById(nodeId);
+        return NodeResponse.from(node);
     }
 
-    public Integer addNode(NodeRequest nodeRequest){
+    public NodeResponse addNode(NodeRequest nodeRequest){
         Node node = new Node();
         NodeType nodeType = NodeType.NORMAL;
         if (nodeRequest.getType() != null) {
@@ -54,43 +60,57 @@ public class GraphService {
             }
         }
         node.setType(nodeType);
-        if (nodeRequest.getLabel()!=null){
-            node.setLabel(nodeRequest.getLabel());
-        }
-        if (nodeRequest.getDemand()!=null){
-            if (nodeType==NodeType.CONSUMER){
+        if (node.getType() == NodeType.CONSUMER) {
+            if (nodeRequest.getDemand()!=null){
                 node.setDemand(nodeRequest.getDemand());
             } else {
-                node.setDemand(null);
-            }
+                node.setDemand(1.0);
+            }    
+        } else {
+            node.setDemand(null);
         }
 
         graph.addNode(node);
-        return node.getId();
+        return NodeResponse.from(node);
     }
 
-    public Node updateNode(Integer nodeId, NodeRequest nodeRequest){
-        StringBuilder sb = new StringBuilder("Update node: Old ");
+    public NodeResponse updateNode(Integer nodeId, NodeRequest nodeRequest) {
         Node node = graph.getNodeById(nodeId);
-        sb.append(node.toString());
-        if (nodeRequest.getType()!=null){
-            node.setType(NodeType.valueOf(nodeRequest.getType().toUpperCase()));
+        
+        StringBuilder sb = new StringBuilder("Update node: Old ")
+            .append(node.toString());
+        
+        if (nodeRequest.getType() != null) {
+            NodeType newType = NodeType.valueOf(nodeRequest.getType().toUpperCase());
+            node.setType(newType);
         }
-        sb.append("| New ");
-        sb.append(node.toString());
+        if (node.getType() == NodeType.CONSUMER) {
+            if (nodeRequest.getDemand()!=null){
+                node.setDemand(nodeRequest.getDemand());
+            } else {
+                node.setDemand(1.0);
+            }    
+        }
+        if (node.getType() != NodeType.CONSUMER) {
+            node.setDemand(null);
+        }
+        sb.append(" | New ").append(node.toString());
         System.out.println(sb.toString());
-        return node;
+        
+        return NodeResponse.from(node);
     }
 
     public boolean removeNode(Integer nodeId){
         return graph.removeNodeById(nodeId);
     }
 
-    public Edge getEdge(Integer edgeId){
-        return graph.getEdgeById(edgeId);
+    public EdgeResponse getEdge(Integer edgeId){
+        Edge edge = graph.getEdgeById(edgeId);
+        return EdgeResponse.from(edge);
+
     }
 
-    public synchronized List<Edge> addEdge(EdgeRequest edgeRequest){
+    public synchronized List<EdgeResponse> addEdge(EdgeRequest edgeRequest){
         System.out.println("[addEdge] Current edge count: " + graph.getEdgeCount());
         Integer node1Id = edgeRequest.getSourceId();
         Node node1 = graph.getNodeById(node1Id);
@@ -108,22 +128,24 @@ public class GraphService {
         graph.addEdge(backwardEdge);
         System.out.println("[addEdge] New edge count: " + graph.getEdgeCount());
 
-        return new ArrayList<Edge>(List.of(forwardEdge, backwardEdge));
+        return List.of(
+            EdgeResponse.from(forwardEdge),
+            EdgeResponse.from(backwardEdge)
+        );
     }
 
-    public Edge updateEdge(Integer edgeId, EdgeRequest edgeRequest){
+    public synchronized EdgeResponse updateEdge(Integer edgeId, EdgeRequest edgeRequest){
         StringBuilder sb = new StringBuilder("Update edge: Old ");
         Edge edge = graph.getEdgeById(edgeId);
         sb.append(edge.toString());
         Double weight = edgeRequest.getWeight();
         if (weight!=null){
             edge.setWeight(weight);
-            graph.getReverseEdge(edge).setWeight(weight);
         }
         sb.append("| New ");
         sb.append(edge.toString());
         System.out.println(sb.toString());
-        return edge;
+        return EdgeResponse.from(edge);
     }
 
     public boolean removeEdge(Integer edgeId){
@@ -143,18 +165,13 @@ public class GraphService {
         );
     }
 
-    /**
-     * Exporta o grafo atual para JSON
-     * @param filePath caminho do arquivo (se null, retorna apenas String)
-     * @return JSON string do grafo
-     */
+
     public String exportGraphJson(String filePath) {
         GraphJson graphJson = new GraphJson();
         
         for (Node node : graph.getNodes()) {
             NodeJson nodeJson = new NodeJson();
             nodeJson.id = node.getId();
-            nodeJson.label = node.getLabel();
             nodeJson.type = node.getType().name();
             nodeJson.demand = node.getDemand();
             graphJson.nodes.add(nodeJson);
@@ -187,18 +204,12 @@ public class GraphService {
         return jsonString;
     }
     
-    /**
-     * Exporta o grafo para JSON string
-     */
+
     public String exportGraphJson() {
         return exportGraphJson(null);
     }
 
-    /**
-     * Importa um grafo de JSON
-     * @param jsonString JSON string contendo o grafo
-     * @param clearExisting se true, limpa o grafo atual antes de importar
-     */
+
     public void importGraphJson(String jsonString, boolean clearExisting) {
         try {
             GraphJson graphJson = gson.fromJson(jsonString, GraphJson.class);
@@ -214,8 +225,8 @@ public class GraphService {
             
             // --------- IMPORT NODES
             for (NodeJson nodeJson : graphJson.nodes) {    
-                Integer nodeId = this.addNode(new NodeRequest(nodeJson.label, nodeJson.type, nodeJson.demand));
-                jsonIdToNodeIdMap.put(nodeJson.id, nodeId);
+                NodeResponse node = this.addNode(new NodeRequest(nodeJson.type, nodeJson.demand));
+                jsonIdToNodeIdMap.put(nodeJson.id, node.getId());
             }
             
             // --------- IMPORT EDGES 
@@ -263,30 +274,11 @@ public class GraphService {
     }
 
     public List<NodeResponse> getAllNodes() {
-        List<NodeResponse> nodeResponses = new ArrayList<>();
-        for (Node node : graph.getNodes()) {
-            NodeResponse response = new NodeResponse();
-            response.setId(node.getId());
-            response.setLabel(node.getLabel());
-            response.setType(node.getType().name());
-            response.setDemand(node.getDemand());
-            nodeResponses.add(response);
-        }
-        return nodeResponses;
+        return graph.getNodes().stream().map(NodeResponse::from).collect(Collectors.toList());
     }
 
     public List<EdgeResponse> getAllEdges() {
-        List<EdgeResponse> edgeResponses = new ArrayList<>();
-        for (Edge edge : graph.getEdges()) {
-            EdgeResponse response = new EdgeResponse(
-                edge.getId(),
-                edge.getSource().getId(),
-                edge.getTarget().getId(),
-                edge.getWeight()
-            );
-            edgeResponses.add(response);
-        }
-        return edgeResponses;
+        return graph.getEdges().stream().map(EdgeResponse::from).collect(Collectors.toList());
     }
 
     public SearchResponse graphSearch(String method, Integer sourceId, Integer targetId){
@@ -311,48 +303,164 @@ public class GraphService {
         return result;
     }
 
-    public PMedianResponse graphPMedian(String algorithm, Integer p, boolean useDemand, boolean useRandomInitialized){
-    double[][] cost = graph.getCostMatrix().getData();
-    double[] weights;
-    if (useDemand){
-        weights = graph.getNodeDemands().stream().mapToDouble(Double::doubleValue).toArray();
-    } else {
-        weights = DoubleStream.generate(() -> 1.0).limit(graph.getNodeCount()).toArray();
-    }
-    
-    PMedianResponse pMedianResponse = new PMedianResponse(p);
-    
-    switch (algorithm){
-        case "GREEDY":
-            PMedianGreedy greedy = new PMedianGreedy(cost, weights, p);
-            greedy.solve(); 
-            pMedianResponse.setFacilities(greedy.getSolution()); 
-            pMedianResponse.setCost(greedy.getSolutionCost()); 
-            pMedianResponse.setAssignments(greedy.getAssignments());
-            break;
+    public byte[] getDistanceMatrix() {
+        List<Node> nodes = graph.getNodes();
+        try {
+            StringBuilder csv = new StringBuilder();
             
-        case "INTERCHANGE":
-            PMedianInterchange interchange = new PMedianInterchange(cost, weights, p, useRandomInitialized);
-            interchange.solve(); 
-            pMedianResponse.setFacilities(interchange.getSolution()); 
-            pMedianResponse.setCost(interchange.getSolutionCost());
-            pMedianResponse.setAssignments(interchange.getAssignments());
-            break;
+            // Header
+            String header = "";
+            for (int i=0; i<nodes.size(); i++){
+                header += String.format(",%d", nodes.get(i).getId());
+            }
+            header += "\n";
+            csv.append(header);
             
-        case "EXACT":
-            PMedianORTools exact = new PMedianORTools(cost, weights, p);
-            exact.solve();
-            pMedianResponse.setFacilities(exact.getSolution());
-            pMedianResponse.setCost(exact.getSolutionCost());
-            pMedianResponse.setAssignments(exact.getAssignments());
-            break;
+            GraphSearch graphSearch = new GraphSearch(graph);
+            for (int i=0; i<nodes.size(); i++) {
+                Node node = nodes.get(i);
+                Map<Node, Double> distance = graphSearch.getDistancesDijkstra(node);
+                System.out.println("Distances found for node " + node.getId() + ": "+distance);
+                csv.append(String.format("%d", node.getId()));
+                for (Node neighbor : distance.keySet()){
+                    csv.append(String.format(",%f", distance.get(neighbor)));
+                }
+                csv.append("\n");
+            }
             
-        default:
-            throw new IllegalArgumentException("Unknown algorithm: " + algorithm);
+            return csv.toString().getBytes(StandardCharsets.UTF_8);
+            
+        } catch (Exception e) {
+            System.err.println("Error generating distance matrix: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to generate distance matrix", e);
+        }
     }
 
-    return pMedianResponse;
-}
+    public byte[] getDemandMatrix() {
+        List<Node> nodes = graph.getNodes();
+        try {
+            StringBuilder csv = new StringBuilder();
+            
+            // Header
+            String header = ",Demand\n";
+            csv.append(header);
+            for (Node node : nodes){
+                if (node.getType()==NodeType.CONSUMER){
+                    csv.append(String.format("C%d,%f\n", node.getId(), node.getDemand()));
+                }
+            }
+            return csv.toString().getBytes(StandardCharsets.UTF_8);
+            
+        } catch (Exception e) {
+            System.err.println("Error generating demand matrix: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to generate demand matrix", e);
+        }
+    }
+
+    public PMedianResponse graphPMedian(String algorithm, Integer p, boolean useDemand, boolean useRandomInitialized){
+        PMedianResponse pMedianResponse = new PMedianResponse(p);
+        
+        try {
+            Graph.CostMatrixResult costMatrixResult = graph.getCostMatrixWithMapping();
+            Graph.NodeDemandsResult nodeDemandsResult = graph.getNodeDemandsWithMapping();
+            
+            double[][] cost = costMatrixResult.getCostMatrix().getData();
+            double[] weights;
+            
+            if (useDemand){
+                weights = nodeDemandsResult.getDemands().stream().mapToDouble(Double::doubleValue).toArray();
+            } else {
+                weights = DoubleStream.generate(() -> 1.0).limit(nodeDemandsResult.getDemands().size()).toArray();
+            }
+
+            List<Integer> consumerIds = nodeDemandsResult.getConsumerIds();
+            List<Integer> candidateIds = costMatrixResult.getCandidateIds();
+            
+            switch (algorithm){
+                case "GREEDY":
+                    System.out.println("HELLO3");
+                    PMedianGreedy greedy = new PMedianGreedy(cost, weights, p, consumerIds, candidateIds);
+                    greedy.solve(); 
+                    pMedianResponse.setFacilities(greedy.getSolutionNodeIds()); 
+                    pMedianResponse.setCost(greedy.getSolutionCost()); 
+                    pMedianResponse.setAssignments(greedy.getAssignmentsWithNodeIds());
+                    System.out.println("HELLO4");
+                    break;
+                    
+                case "INTERCHANGE":
+                    PMedianInterchange interchange = new PMedianInterchange(cost, weights, p, consumerIds, candidateIds, useRandomInitialized);
+                    interchange.solve(); 
+                    pMedianResponse.setFacilities(interchange.getSolutionNodeIds()); 
+                    pMedianResponse.setCost(interchange.getSolutionCost());
+                    pMedianResponse.setAssignments(interchange.getAssignmentsWithNodeIds());
+                    break;
+                
+                case "CLUSTERING":
+                    PMedianClustering clusteringAlg = new PMedianClustering(cost, weights, p, consumerIds, candidateIds, graph);
+                    clusteringAlg.solve();
+                    pMedianResponse.setFacilities(clusteringAlg.getSolutionNodeIds());
+                    pMedianResponse.setCost(clusteringAlg.getSolutionCost());
+                    pMedianResponse.setAssignments(clusteringAlg.getAssignmentsWithNodeIds());
+                    break;
+                    
+                default:
+                    throw new IllegalArgumentException("Unknown algorithm: " + algorithm);
+            }
+            
+        } catch (IllegalStateException e) {
+            pMedianResponse.setError("Clustering error: " + e.getMessage());
+            System.err.println("P-Median clustering error: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            pMedianResponse.setError("Invalid argument: " + e.getMessage());
+            System.err.println("P-Median argument error: " + e.getMessage());
+        } catch (Exception e) {
+            pMedianResponse.setError("Unexpected error: " + e.getMessage());
+            System.err.println("P-Median unexpected error: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return pMedianResponse;
+    }
+
+
+
+    public byte[] getCostMatrix() {
+        List<Node> consumers = graph.getConsumerNodes();
+        List<Node> candidates = graph.getFacilityCandidates();
+        try {
+            StringBuilder csv = new StringBuilder();
+            
+            // Header
+            String header = "";
+            for (int i=0; i<candidates.size(); i++){
+                header += String.format(",F%d", candidates.get(i).getId());
+            }
+            header += "\n";
+            csv.append(header);
+            
+            GraphSearch graphSearch = new GraphSearch(graph);
+            for (int i=0; i<consumers.size(); i++) {
+                Node node = consumers.get(i);
+                Map<Node, Double> distance = graphSearch.getDistancesDijkstra(node);
+                csv.append(String.format("C%d", node.getId()));
+                for (Node neighbor : distance.keySet()){
+                    if (neighbor.getType()!=NodeType.CONSUMER){
+                        csv.append(String.format(",%f", distance.get(neighbor)));
+                    }
+                }
+                csv.append("\n");
+            }
+            
+            return csv.toString().getBytes(StandardCharsets.UTF_8);
+            
+        } catch (Exception e) {
+            System.err.println("Error generating cost matrix: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to generate cost matrix", e);
+        }
+    }
 
     public ClusteringResponse graphCluster(ClusteringRequest clusteringRequest) {
         GraphClustering clustering = new GraphClustering(graph);
@@ -398,7 +506,6 @@ public class GraphService {
     
     private static class NodeJson {
         public Integer id;
-        public String label;
         public String type;
         public Double demand;
     }
@@ -414,12 +521,10 @@ public class GraphService {
     // "nodes": [
     //     {
     //     "id": 1,
-    //     "label": "",
     //     "type": "NORMAL"
     //     },
     //     {
     //     "id": 2,
-    //     "label": "",
     //     "type": "NORMAL"
     //     }
     // ],
