@@ -180,7 +180,7 @@ export function FileIOMenu({nodeList, nodeActions, edgeActions, setNodeList, set
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }
-    }, [edgeActions, nodeList, fileSaveParams.filename, fileFormat]);
+    }, [nodeActions, edgeActions, fileFormat, setErrorMessage, nodeList, fileSaveParams.filename]);
     
     const handleOpenGraph = useCallback(() => {
         const input = document.createElement('input');
