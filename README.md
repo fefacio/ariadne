@@ -34,3 +34,5 @@ Além disso, a aplicação também realiza o cálculo de diversas estatísticas 
 
 Para a resolução do problema do p-median, foram implementados dois algoritmos heurísticos clássicos: o algoritmo guloso (KUEHN; HAMBURGER,1963) e o método Interchangede (TEITZ; BART, 1968). Além disso, foi desenvolvida uma variação híbrida que integra o processo de clustering, na qual o número de clusters é igual ao número de instalações, e, dentro de cada grupo, selecionam-se os nós com menor distância média aos consumidores para se tornarem instalações.
 ![p-median](./images/menu-pmedian1.png)
+
+![p-median-all](./images/menu-pmedian3.png)
